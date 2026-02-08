@@ -1,0 +1,32 @@
+version: '3.9'
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: processmeter
+    ports:
+      - "5432:5432"
+    volumes:
+      - pm_db:/var/lib/postgresql/data
+      - ./db:/db
+  app:
+    build: .
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/processmeter
+      JWT_SECRET: change-me
+      ADMIN_API_KEY: change-me
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ADMIN_FULL_NAME: ${ADMIN_FULL_NAME}
+      AUTO_MIGRATE: ${AUTO_MIGRATE}
+      ORG_NAME: ${ORG_NAME}
+      STATIC_DIR: /app/frontend/dist
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    depends_on:
+      - db
+volumes:
+  pm_db:
