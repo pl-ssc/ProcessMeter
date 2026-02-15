@@ -13,6 +13,8 @@ const defaultColumns = [
 export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark }) {
     const [columns, setColumns] = useState(defaultColumns);
     const [tooltip, setTooltip] = useState({ visible: false, text: '', x: 0, y: 0 });
+    const HEADER_ICON_SIZE = 18;
+    const HEADER_ICON_PAD = 8;
 
     const headerTooltips = useMemo(() => ({
         f4_name: 'Название операции, которую вы выполняете.',
@@ -24,9 +26,9 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark 
     const headerIcons = useMemo(() => ({
         info: ({ fgColor }) => (
             `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">` +
-            `<circle cx="10" cy="10" r="8" stroke="${fgColor}" stroke-width="1.5"/>` +
-            `<line x1="10" y1="9" x2="10" y2="14" stroke="${fgColor}" stroke-width="1.5" stroke-linecap="round"/>` +
-            `<circle cx="10" cy="6.5" r="1" fill="${fgColor}"/>` +
+            `<circle cx="10" cy="10" r="8" stroke="${fgColor}" stroke-width="1.8"/>` +
+            `<line x1="10" y1="9" x2="10" y2="14" stroke="${fgColor}" stroke-width="1.8" stroke-linecap="round"/>` +
+            `<circle cx="10" cy="6.5" r="1.2" fill="${fgColor}"/>` +
             `</svg>`
         ),
     }), []);
@@ -152,23 +154,34 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark 
         onEdit(next);
     }, [answers, systemsByName, onEdit]);
 
-    const onItemHovered = useCallback((args) => {
-        if (args.kind === 'header') {
-            const colIndex = args.location[0];
-            const col = columns[colIndex];
-            const text = col ? headerTooltips[col.id] : '';
-            if (text) {
-                setTooltip({ visible: true, text, x: args.localEventX, y: args.localEventY });
-                return;
-            }
-        }
-        setTooltip((prev) => (prev.visible ? { ...prev, visible: false } : prev));
-    }, [columns, headerTooltips]);
+    const isOverHeaderIcon = useCallback((args) => {
+        if (args.kind !== 'header') return false;
+        const colIndex = args.location[0];
+        const col = columns[colIndex];
+        if (!col || !col.icon) return false;
+
+        const iconX = args.bounds.x + HEADER_ICON_PAD;
+        const iconY = args.bounds.y + (args.bounds.height - HEADER_ICON_SIZE) / 2;
+        const withinX = args.localEventX >= iconX && args.localEventX <= iconX + HEADER_ICON_SIZE;
+        const withinY = args.localEventY >= iconY && args.localEventY <= iconY + HEADER_ICON_SIZE;
+        return withinX && withinY;
+    }, [columns, HEADER_ICON_PAD, HEADER_ICON_SIZE]);
 
     const onMouseMove = useCallback((args) => {
-        if (!tooltip.visible || args.kind !== 'header') return;
-        setTooltip((prev) => ({ ...prev, x: args.localEventX, y: args.localEventY }));
-    }, [tooltip.visible]);
+        if (args.kind !== 'header') {
+            setTooltip((prev) => (prev.visible ? { ...prev, visible: false } : prev));
+            return;
+        }
+        if (!isOverHeaderIcon(args)) {
+            setTooltip((prev) => (prev.visible ? { ...prev, visible: false } : prev));
+            return;
+        }
+        const colIndex = args.location[0];
+        const col = columns[colIndex];
+        const text = col ? headerTooltips[col.id] : '';
+        if (!text) return;
+        setTooltip({ visible: true, text, x: args.localEventX, y: args.localEventY });
+    }, [columns, headerTooltips, isOverHeaderIcon]);
 
     if (!answers || answers.length === 0) {
         return <div className="grid-placeholder">Загрузка данных...</div>;
@@ -183,6 +196,10 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark 
         bgHeader: "#1e293b",
         borderColor: "#334155",
         bgCell: "#0f172a",
+        fgIconHeader: "#38bdf8",
+        bgIconHeader: "#0f172a",
+        headerIconSize: HEADER_ICON_SIZE,
+        cellHorizontalPadding: HEADER_ICON_PAD,
         fontFamily: "Inter, sans-serif",
     } : {
         accentColor: "#10b981",
@@ -191,6 +208,10 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark 
         textDark: "#0f172a",
         bgHeader: "#f8fafc",
         borderColor: "#e2e8f0",
+        fgIconHeader: "#0ea5e9",
+        bgIconHeader: "#f8fafc",
+        headerIconSize: HEADER_ICON_SIZE,
+        cellHorizontalPadding: HEADER_ICON_PAD,
         fontFamily: "Inter, sans-serif",
     };
 
@@ -211,7 +232,6 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark 
                 theme={gridTheme}
                 onColumnResize={onColumnResize}
                 headerIcons={headerIcons}
-                onItemHovered={onItemHovered}
                 onMouseMove={onMouseMove}
             />
             {tooltip.visible && (
