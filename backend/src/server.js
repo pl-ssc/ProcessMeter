@@ -632,8 +632,10 @@ app.get('/api/user/stats', { preHandler: [app.authenticate] }, async (request) =
     status = 'in_progress';
   }
 
-  // Calculate FTE (default divisor 160)
-  const fte = parseFloat((totalHours / 160).toFixed(2));
+  // Calculate FTE (default divisor 165)
+  const fteDivisor = Number(process.env.FTE_DIVISOR ?? 165);
+  const safeDivisor = Number.isFinite(fteDivisor) && fteDivisor > 0 ? fteDivisor : 165;
+  const fte = parseFloat((totalHours / safeDivisor).toFixed(2));
 
   return {
     total_hours: totalHours,

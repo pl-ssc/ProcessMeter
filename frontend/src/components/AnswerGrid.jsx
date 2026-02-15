@@ -4,14 +4,32 @@ import { DropdownCell } from '@glideapps/glide-data-grid-cells';
 import "@glideapps/glide-data-grid/dist/index.css";
 
 const defaultColumns = [
-    { id: 'f4_name', title: 'Операция', width: 400 },
-    { id: 'labor_hours', title: 'Трудоемкость (чел-часы)', width: 180 },
-    { id: 'system_id', title: 'ИТ-система', width: 220 },
-    { id: 'note', title: 'Примечание', width: 320 },
+    { id: 'f4_name', title: 'Операция', width: 400, icon: 'info' },
+    { id: 'labor_hours', title: 'Трудозатраты', width: 180, icon: 'info' },
+    { id: 'system_id', title: 'ИТ-система', width: 220, icon: 'info' },
+    { id: 'note', title: 'Примечание', width: 320, icon: 'info' },
 ];
 
 export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark }) {
     const [columns, setColumns] = useState(defaultColumns);
+    const [tooltip, setTooltip] = useState({ visible: false, text: '', x: 0, y: 0 });
+
+    const headerTooltips = useMemo(() => ({
+        f4_name: 'Название операции, которую вы выполняете.',
+        labor_hours: 'Суммарные трудозатраты по операции за период, в чел-часах (0–240).',
+        system_id: 'ИТ-система, которая используется для выполнения операции.',
+        note: 'Краткие пояснения: допущения, нюансы, исключения.',
+    }), []);
+
+    const headerIcons = useMemo(() => ({
+        info: ({ fgColor }) => (
+            `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">` +
+            `<circle cx="10" cy="10" r="8" stroke="${fgColor}" stroke-width="1.5"/>` +
+            `<line x1="10" y1="9" x2="10" y2="14" stroke="${fgColor}" stroke-width="1.5" stroke-linecap="round"/>` +
+            `<circle cx="10" cy="6.5" r="1" fill="${fgColor}"/>` +
+            `</svg>`
+        ),
+    }), []);
 
     const onColumnResize = useCallback((column, newSize, colIndex) => {
         setColumns(prev => {
@@ -107,7 +125,7 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark 
         if (col === 1 && newValue.kind === GridCellKind.Number) {
             const val = newValue.data === null ? null : Number(newValue.data);
             if (val !== null && (Number.isNaN(val) || val < 0 || val > 240)) {
-                window.alert('Трудоемкость должна быть числом от 0 до 240');
+                window.alert('Трудозатраты должны быть числом от 0 до 240');
                 return;
             }
             next.labor_hours = val;
@@ -134,6 +152,24 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark 
         onEdit(next);
     }, [answers, systemsByName, onEdit]);
 
+    const onItemHovered = useCallback((args) => {
+        if (args.kind === 'header') {
+            const colIndex = args.location[0];
+            const col = columns[colIndex];
+            const text = col ? headerTooltips[col.id] : '';
+            if (text) {
+                setTooltip({ visible: true, text, x: args.localEventX, y: args.localEventY });
+                return;
+            }
+        }
+        setTooltip((prev) => (prev.visible ? { ...prev, visible: false } : prev));
+    }, [columns, headerTooltips]);
+
+    const onMouseMove = useCallback((args) => {
+        if (!tooltip.visible || args.kind !== 'header') return;
+        setTooltip((prev) => ({ ...prev, x: args.localEventX, y: args.localEventY }));
+    }, [tooltip.visible]);
+
     if (!answers || answers.length === 0) {
         return <div className="grid-placeholder">Загрузка данных...</div>;
     }
@@ -159,7 +195,7 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark 
     };
 
     return (
-        <div className="grid-wrap">
+        <div className="grid-wrap" style={{ position: 'relative' }}>
             <DataEditor
                 columns={columns}
                 getCellContent={getCellContent}
@@ -174,7 +210,34 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark 
                 customRenderers={customRenderers}
                 theme={gridTheme}
                 onColumnResize={onColumnResize}
+                headerIcons={headerIcons}
+                onItemHovered={onItemHovered}
+                onMouseMove={onMouseMove}
             />
+            {tooltip.visible && (
+                <div
+                    style={{
+                        position: 'absolute',
+                        left: tooltip.x + 12,
+                        top: tooltip.y + 16,
+                        maxWidth: 260,
+                        padding: '8px 10px',
+                        background: isDark ? '#0f172a' : '#ffffff',
+                        color: isDark ? '#e2e8f0' : '#0f172a',
+                        border: `1px solid ${isDark ? '#334155' : '#e2e8f0'}`,
+                        borderRadius: 8,
+                        fontSize: 12,
+                        lineHeight: 1.3,
+                        boxShadow: isDark
+                            ? '0 8px 16px rgba(0, 0, 0, 0.4)'
+                            : '0 8px 16px rgba(15, 23, 42, 0.12)',
+                        pointerEvents: 'none',
+                        zIndex: 5,
+                    }}
+                >
+                    {tooltip.text}
+                </div>
+            )}
         </div>
     );
 }
