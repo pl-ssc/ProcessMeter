@@ -3,7 +3,7 @@ import { DataEditor, GridCellKind } from '@glideapps/glide-data-grid';
 import { DropdownCell } from '@glideapps/glide-data-grid-cells';
 import "@glideapps/glide-data-grid/dist/index.css";
 
-const columns = [
+const defaultColumns = [
     { id: 'f4_name', title: 'Операция', width: 400 },
     { id: 'labor_hours', title: 'Трудоемкость (чел-часы)', width: 180 },
     { id: 'system_id', title: 'ИТ-система', width: 220 },
@@ -11,6 +11,16 @@ const columns = [
 ];
 
 export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark }) {
+    const [columns, setColumns] = useState(defaultColumns);
+
+    const onColumnResize = useCallback((column, newSize, colIndex) => {
+        setColumns(prev => {
+            const newCols = [...prev];
+            newCols[colIndex] = { ...newCols[colIndex], width: newSize };
+            return newCols;
+        });
+    }, []);
+
     const customRenderers = useMemo(() => [DropdownCell], []);
 
     const systemsById = React.useMemo(() => {
@@ -163,6 +173,7 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark 
                 stickyColumns={1}
                 customRenderers={customRenderers}
                 theme={gridTheme}
+                onColumnResize={onColumnResize}
             />
         </div>
     );

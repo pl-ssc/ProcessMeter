@@ -486,14 +486,30 @@ app.get('/api/systems', { preHandler: [app.authenticate] }, async () => {
   return { systems: rows };
 });
 
-app.get('/api/processes', { preHandler: [app.authenticate] }, async () => {
+app.get('/api/processes', { preHandler: [app.authenticate] }, async (request) => {
+  const userId = request.user.sub;
   const { rows } = await query(
-    `SELECT p3.f3_index, p3.f3_name, p2.f2_index, p2.f2_name, p1.f1_index, p1.f1_name
+    `SELECT 
+        p3.f3_index, 
+        p3.f3_name, 
+        p2.f2_index, 
+        p2.f2_name, 
+        p1.f1_index, 
+        p1.f1_name,
+        EXISTS (
+            SELECT 1 
+            FROM process_4 p4
+            JOIN user_answers ua ON ua.operation_id = p4.f4_index
+            WHERE p4.f3_index = p3.f3_index
+              AND ua.user_id = $1
+              AND ua.labor_hours IS NOT NULL
+        ) as has_data
      FROM process_3 p3
      LEFT JOIN process_2 p2 ON p2.f2_index = p3.f2_index
      LEFT JOIN process_1 p1 ON p1.f1_index = p2.f1_index
      WHERE p3.is_active IS DISTINCT FROM false
-     ORDER BY COALESCE(p1.sort, 0), COALESCE(p2.sort, 0), COALESCE(p3.sort, 0), p3.f3_name`
+     ORDER BY COALESCE(p1.sort, 0), COALESCE(p2.sort, 0), COALESCE(p3.sort, 0), p3.f3_name`,
+    [userId]
   );
   return { process_3: rows };
 });
@@ -590,6 +606,41 @@ app.post('/api/answers/complete', { preHandler: [app.authenticate] }, async (req
   );
 
   return { updated: rows.length };
+});
+
+app.get('/api/user/stats', { preHandler: [app.authenticate] }, async (request) => {
+  const userId = request.user.sub;
+
+  // Calculate total hours
+  const { rows: stats } = await query(
+    `SELECT 
+       COALESCE(SUM(labor_hours), 0) as total_hours,
+       BOOL_OR(is_done) as is_submitted
+     FROM user_answers 
+     WHERE user_id = $1`,
+    [userId]
+  );
+
+  const totalHours = parseFloat(stats[0].total_hours || 0);
+  const isSubmitted = stats[0].is_submitted || false;
+
+  // Determine status
+  let status = 'not_started';
+  if (isSubmitted) {
+    status = 'completed';
+  } else if (totalHours > 0) {
+    status = 'in_progress';
+  }
+
+  // Calculate FTE (default divisor 160)
+  const fte = parseFloat((totalHours / 160).toFixed(2));
+
+  return {
+    total_hours: totalHours,
+    fte,
+    status,
+    is_submitted: isSubmitted
+  };
 });
 
 if (fs.existsSync(STATIC_DIR)) {

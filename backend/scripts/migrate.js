@@ -100,6 +100,7 @@ async function runMigration() {
 
         // 5. Перегенерация пустых ответов для всех пользователей
         console.log('📝 Генерация новых пустых форм ответов...');
+        console.log('   💾 Данные (ответы) записываются в: public.user_answers');
         const { rows: users } = await targetClient.query("SELECT id, username FROM users WHERE is_active = true");
         console.log(`   👥 Найдено активных пользователей: ${users.length}`);
 

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
     LogOut,
-    Send,
     CheckCircle,
     Cloud,
     Sun,
@@ -45,15 +44,6 @@ export default function Header({ user, onLogout, autoSaveStatus, onSubmit, hasCh
                     <UserCircle size={20} className="text-muted" />
                     <span>{user.full_name || user.username}</span>
                 </div>
-
-                <button
-                    className="primary"
-                    onClick={onSubmit}
-                    disabled={!hasChanges}
-                >
-                    <Send size={16} />
-                    Отправить
-                </button>
 
                 <button className="ghost icon-btn" onClick={onLogout} title="Выйти">
                     <LogOut size={18} />

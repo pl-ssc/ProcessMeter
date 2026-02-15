@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '../api.js';
 import { useAutoSave } from '../hooks/useAutoSave.js';
 import Header from './Header.jsx';
+import InfoPanel from './InfoPanel.jsx';
 import ProcessTree from './ProcessTree.jsx';
 import AnswerGrid from './AnswerGrid.jsx';
 
@@ -14,6 +15,7 @@ export default function RespondentView({ user, onLogout }) {
     const [sidebarWidth, setSidebarWidth] = useState(window.innerWidth * 0.25);
     const [isResizing, setIsResizing] = useState(false);
     const [isDark, setIsDark] = useState(false);
+    const [stats, setStats] = useState({ total_hours: 0, fte: 0, status: 'not_started' });
 
     const toggleTheme = useCallback(() => {
         setIsDark(prev => !prev);
@@ -22,6 +24,15 @@ export default function RespondentView({ user, onLogout }) {
     useEffect(() => {
         document.body.classList.toggle('dark-theme', isDark);
     }, [isDark]);
+
+    const loadStats = useCallback(async () => {
+        try {
+            const res = await apiFetch('/api/user/stats');
+            setStats(res);
+        } catch (err) {
+            console.error('Failed to load stats:', err);
+        }
+    }, []);
 
     useEffect(() => {
         const loadMeta = async () => {
@@ -36,7 +47,8 @@ export default function RespondentView({ user, onLogout }) {
             }
         };
         loadMeta();
-    }, []);
+        loadStats();
+    }, [loadStats]);
 
     useEffect(() => {
         if (!selectedF3Index) return;
@@ -62,11 +74,12 @@ export default function RespondentView({ user, onLogout }) {
                 body: JSON.stringify({ items }),
             });
             setDirtyMap(new Map());
+            loadStats(); // Update stats after save
         } catch (err) {
             window.alert(`Ошибка сохранения: ${err.message}`);
             throw err;
         }
-    }, [dirtyMap]);
+    }, [dirtyMap, loadStats]);
 
     const { trigger: triggerAutoSave, status: autoSaveStatus } = useAutoSave(handleSave);
 
@@ -96,6 +109,7 @@ export default function RespondentView({ user, onLogout }) {
         try {
             await apiFetch('/api/answers/complete', { method: 'POST' });
             setAnswers((prev) => prev.map((r) => ({ ...r, is_done: true, done_at: new Date().toISOString() })));
+            loadStats(); // Update stats after submit
             window.alert('Изменения отправлены');
         } catch (err) {
             window.alert(`Ошибка: ${err.message}`);
@@ -148,10 +162,15 @@ export default function RespondentView({ user, onLogout }) {
                 user={user}
                 onLogout={onLogout}
                 autoSaveStatus={autoSaveStatus}
-                onSubmit={handleSubmit}
                 hasChanges={dirtyMap.size > 0}
                 isDark={isDark}
                 onToggleTheme={toggleTheme}
+            />
+            <InfoPanel
+                stats={stats}
+                onSubmit={handleSubmit}
+                hasChanges={dirtyMap.size > 0}
+                isDark={isDark}
             />
             <div
                 className="respondent-layout"
