@@ -11,8 +11,12 @@
   "dependencies": {
     "@glideapps/glide-data-grid": "^5.2.0",
     "@glideapps/glide-data-grid-cells": "^5.2.0",
+    "lodash": "^4.17.23",
+    "lodash.flatten": "^4.4.0",
+    "lucide-react": "^0.564.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "scheduler": "^0.27.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",

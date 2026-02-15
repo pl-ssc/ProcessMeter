@@ -1,16 +1,19 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config(); // local (backend folder)
+dotenv.config({ path: path.join(__dirname, '../../.env') }); // root folder
+
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
 import fastifyStatic from '@fastify/static';
-import { Pool } from 'pg';
+import Pool from 'pg-pool';
+import Client from 'pg/lib/client.js';
 import bcrypt from 'bcryptjs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import fs from 'fs';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const PORT = Number(process.env.PORT || 3001);
 const HOST = process.env.HOST || '0.0.0.0';
@@ -30,30 +33,81 @@ if (!DATABASE_URL) {
 
 const pool = new Pool({ connectionString: DATABASE_URL });
 
+console.log(`Connecting to database at ${DATABASE_URL.replace(/:[^:@]+@/, ':***@')}`);
+
 const app = Fastify({ logger: true });
 
 const ensureSchema = async () => {
-  if (!AUTO_MIGRATE) return;
-  const schemaPath = path.join(__dirname, '../../db/schema.sql');
-  if (!fs.existsSync(schemaPath)) return;
-  const sql = fs.readFileSync(schemaPath, 'utf8');
-  if (!sql.trim()) return;
-  await pool.query(sql);
-  app.log.info('Schema ensured');
+  console.log('Checking schema status...');
+  if (!AUTO_MIGRATE) {
+    console.log('AUTO_MIGRATE is false, skipping');
+    return;
+  }
+
+  try {
+    // Check if the users table already exists
+    console.log('Querying information_schema for users table...');
+    const { rows } = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'users'
+      );
+    `);
+
+    if (rows[0].exists) {
+      app.log.info('Schema already exists, skipping auto-migration');
+      console.log('Schema already exists, skipping auto-migration');
+      return;
+    }
+
+    const schemaPath = path.join(__dirname, '../../db/schema.sql');
+    console.log(`Loading schema from ${schemaPath}`);
+    if (!fs.existsSync(schemaPath)) {
+      app.log.warn('Migration file schema.sql not found');
+      console.log('Migration file schema.sql not found');
+      return;
+    }
+
+    const sql = fs.readFileSync(schemaPath, 'utf8');
+    if (!sql.trim()) {
+      console.log('Schema file is empty');
+      return;
+    }
+
+    console.log('Applying schema SQL...');
+    await pool.query(sql);
+    app.log.info('Schema applied successfully');
+    console.log('Schema applied successfully');
+  } catch (err) {
+    app.log.error(err, 'Failed to ensure schema');
+    console.error('Failed to ensure schema:', err);
+    throw err;
+  }
 };
 
 const ensureAdminUser = async () => {
-  if (!ADMIN_USERNAME || !ADMIN_PASSWORD) return;
+  if (!ADMIN_USERNAME || !ADMIN_PASSWORD) {
+    app.log.warn('ADMIN_USERNAME or ADMIN_PASSWORD not set, skipping admin creation');
+    return;
+  }
 
-  const { rows } = await pool.query('SELECT id FROM users WHERE username = $1', [ADMIN_USERNAME]);
-  if (rows.length > 0) return;
+  try {
+    const { rows } = await pool.query('SELECT id FROM users WHERE username = $1', [ADMIN_USERNAME]);
+    if (rows.length > 0) {
+      app.log.info({ username: ADMIN_USERNAME }, 'Admin user already exists');
+      return;
+    }
 
-  const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 10);
-  await pool.query(
-    'INSERT INTO users (username, password_hash, full_name, role) VALUES ($1, $2, $3, $4)',
-    [ADMIN_USERNAME, passwordHash, ADMIN_FULL_NAME || null, 'admin']
-  );
-  app.log.info({ username: ADMIN_USERNAME }, 'Admin user created');
+    const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 10);
+    await pool.query(
+      'INSERT INTO users (username, password_hash, full_name, role) VALUES ($1, $2, $3, $4)',
+      [ADMIN_USERNAME, passwordHash, ADMIN_FULL_NAME || null, 'admin']
+    );
+    app.log.info({ username: ADMIN_USERNAME }, 'Admin user created successfully');
+  } catch (err) {
+    app.log.error(err, 'Failed to create admin user');
+  }
 };
 
 await app.register(cors, {
@@ -483,7 +537,7 @@ app.get('/api/answers', { preHandler: [app.authenticate] }, async (request) => {
        AND p4.is_active IS DISTINCT FROM false
        ${filter}
      ORDER BY COALESCE(p1.sort, 0), COALESCE(p2.sort, 0), COALESCE(p3.sort, 0), COALESCE(p4.sort, 0), p4.f4_name`
-  , params);
+    , params);
 
   return { answers: rows };
 });

@@ -2,6 +2,8 @@
   "name": "processmeter",
   "private": true,
   "scripts": {
+    "dev": "npm --prefix backend run dev & npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
     "dev:all": "sh -c 'set -a; source ./.env; set +a; export VITE_API_URL=http://127.0.0.1:3001; npm --prefix backend run dev & BACK_PID=$!; npm --prefix frontend run dev & FRONT_PID=$!; trap \"kill $BACK_PID $FRONT_PID\" INT TERM; wait'"
   }
 }

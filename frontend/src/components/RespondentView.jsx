@@ -1,0 +1,176 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { apiFetch } from '../api.js';
+import { useAutoSave } from '../hooks/useAutoSave.js';
+import Header from './Header.jsx';
+import ProcessTree from './ProcessTree.jsx';
+import AnswerGrid from './AnswerGrid.jsx';
+
+export default function RespondentView({ user, onLogout }) {
+    const [systems, setSystems] = useState([]);
+    const [processes, setProcesses] = useState([]);
+    const [selectedF3Index, setSelectedF3Index] = useState('');
+    const [answers, setAnswers] = useState([]);
+    const [dirtyMap, setDirtyMap] = useState(new Map());
+    const [sidebarWidth, setSidebarWidth] = useState(280);
+    const [isResizing, setIsResizing] = useState(false);
+    const [isDark, setIsDark] = useState(false);
+
+    const toggleTheme = useCallback(() => {
+        setIsDark(prev => !prev);
+    }, []);
+
+    useEffect(() => {
+        document.body.classList.toggle('dark-theme', isDark);
+    }, [isDark]);
+
+    useEffect(() => {
+        const loadMeta = async () => {
+            const [sys, proc] = await Promise.all([
+                apiFetch('/api/systems'),
+                apiFetch('/api/processes'),
+            ]);
+            setSystems(sys.systems || []);
+            setProcesses(proc.process_3 || []);
+            if (proc.process_3 && proc.process_3.length > 0) {
+                setSelectedF3Index(proc.process_3[0].f3_index);
+            }
+        };
+        loadMeta();
+    }, []);
+
+    useEffect(() => {
+        if (!selectedF3Index) return;
+        const loadAnswers = async () => {
+            const res = await apiFetch(`/api/answers?f3_index=${encodeURIComponent(selectedF3Index)}`);
+            setAnswers(res.answers || []);
+            setDirtyMap(new Map());
+        };
+        loadAnswers();
+    }, [selectedF3Index]);
+
+    const handleSave = useCallback(async () => {
+        if (dirtyMap.size === 0) return;
+        try {
+            const items = Array.from(dirtyMap.values()).map((item) => ({
+                operation_id: item.operation_id,
+                labor_hours: item.labor_hours ?? null,
+                system_id: item.system_id ?? null,
+                note: item.note ?? null,
+            }));
+            await apiFetch('/api/answers/bulk', {
+                method: 'POST',
+                body: JSON.stringify({ items }),
+            });
+            setDirtyMap(new Map());
+        } catch (err) {
+            window.alert(`Ошибка сохранения: ${err.message}`);
+            throw err;
+        }
+    }, [dirtyMap]);
+
+    const { trigger: triggerAutoSave, status: autoSaveStatus } = useAutoSave(handleSave);
+
+    const handleEdit = useCallback((updatedItem) => {
+        setAnswers((prev) => {
+            const idx = prev.findIndex((a) => a.operation_id === updatedItem.operation_id);
+            if (idx === -1) return prev;
+            const next = [...prev];
+            next[idx] = updatedItem;
+            return next;
+        });
+
+        setDirtyMap((prev) => {
+            const next = new Map(prev);
+            next.set(updatedItem.operation_id, updatedItem);
+            return next;
+        });
+
+        triggerAutoSave();
+    }, [triggerAutoSave]);
+
+    const handleSubmit = async () => {
+        if (dirtyMap.size > 0) {
+            await handleSave();
+        }
+        if (!window.confirm('Отправить изменения?')) return;
+        try {
+            await apiFetch('/api/answers/complete', { method: 'POST' });
+            setAnswers((prev) => prev.map((r) => ({ ...r, is_done: true, done_at: new Date().toISOString() })));
+            window.alert('Изменения отправлены');
+        } catch (err) {
+            window.alert(`Ошибка: ${err.message}`);
+        }
+    };
+
+    const handleSelectF3 = (f3Index) => {
+        if (dirtyMap.size > 0) {
+            const ok = window.confirm('Есть несохраненные изменения. Перейти и потерять изменения?');
+            if (!ok) return;
+        }
+        setSelectedF3Index(f3Index);
+    };
+
+    const startResizing = useCallback((e) => {
+        setIsResizing(true);
+    }, []);
+
+    const stopResizing = useCallback(() => {
+        setIsResizing(false);
+    }, []);
+
+    const resize = useCallback((e) => {
+        if (isResizing) {
+            const newWidth = e.clientX;
+            const maxWidth = window.innerWidth * 0.5;
+            if (newWidth > 150 && newWidth < maxWidth) {
+                setSidebarWidth(newWidth);
+            }
+        }
+    }, [isResizing]);
+
+    useEffect(() => {
+        if (isResizing) {
+            window.addEventListener('mousemove', resize);
+            window.addEventListener('mouseup', stopResizing);
+        } else {
+            window.removeEventListener('mousemove', resize);
+            window.removeEventListener('mouseup', stopResizing);
+        }
+        return () => {
+            window.removeEventListener('mousemove', resize);
+            window.removeEventListener('mouseup', stopResizing);
+        };
+    }, [isResizing, resize, stopResizing]);
+
+    return (
+        <div className="app">
+            <Header
+                user={user}
+                onLogout={onLogout}
+                autoSaveStatus={autoSaveStatus}
+                onSubmit={handleSubmit}
+                hasChanges={dirtyMap.size > 0}
+                isDark={isDark}
+                onToggleTheme={toggleTheme}
+            />
+            <div
+                className="respondent-layout"
+                style={{ gridTemplateColumns: `${sidebarWidth}px 4px 1fr` }}
+            >
+                <ProcessTree
+                    processes={processes}
+                    selectedF3Index={selectedF3Index}
+                    onSelectF3={handleSelectF3}
+                />
+                <div className="resizer" onMouseDown={startResizing} />
+                <AnswerGrid
+                    answers={answers}
+                    systems={systems}
+                    onEdit={handleEdit}
+                    dirtyMap={dirtyMap}
+                    isDark={isDark}
+                />
+            </div>
+        </div>
+    );
+}
