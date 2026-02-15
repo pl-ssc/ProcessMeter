@@ -11,7 +11,7 @@ export default function RespondentView({ user, onLogout }) {
     const [selectedF3Index, setSelectedF3Index] = useState('');
     const [answers, setAnswers] = useState([]);
     const [dirtyMap, setDirtyMap] = useState(new Map());
-    const [sidebarWidth, setSidebarWidth] = useState(280);
+    const [sidebarWidth, setSidebarWidth] = useState(window.innerWidth * 0.25);
     const [isResizing, setIsResizing] = useState(false);
     const [isDark, setIsDark] = useState(false);
 

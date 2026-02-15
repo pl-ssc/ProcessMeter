@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { apiFetch, getToken, setToken } from './api.js';
 import LoginPage from './components/LoginPage.jsx';
 import RespondentView from './components/RespondentView.jsx';
+import AdminView from './components/AdminView.jsx';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -52,6 +53,13 @@ export default function App() {
 
   if (!user) {
     return <LoginPage onLogin={handleLogin} error={loginError} />;
+  }
+
+  // Ролевая модель: если админ, по умолчанию показываем админку, 
+  // но даем возможность переключиться в режим респондента (если нужно).
+  // Для простоты сейчас: админы видят админку, респонденты — анкету.
+  if (user.role === 'admin') {
+    return <AdminView user={user} onLogout={handleLogout} />;
   }
 
   return <RespondentView user={user} onLogout={handleLogout} />;

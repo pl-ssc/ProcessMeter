@@ -10,8 +10,8 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
 import fastifyStatic from '@fastify/static';
-import Pool from 'pg-pool';
-import Client from 'pg/lib/client.js';
+import pg from 'pg';
+const { Pool, Client } = pg;
 import bcrypt from 'bcryptjs';
 import fs from 'fs';
 

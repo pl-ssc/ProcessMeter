@@ -36,11 +36,13 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark 
         if (!item) return { kind: GridCellKind.Text, data: '', displayData: '' };
 
         const isDirty = dirtyMap.has(item.operation_id);
-        const editableCols = new Set([1, 2, 3]);
+        const hasData = (item.labor_hours !== null && item.labor_hours !== undefined) ||
+            (item.system_id !== null && item.system_id !== undefined) ||
+            (item.note && item.note.trim() !== '');
 
-        // Use theme-aware accent colors for dirty cells
+        // Use theme-aware accent colors for dirty or filled rows
         const dirtyColor = isDark ? '#064e3b' : '#ecfdf5';
-        const themeOverride = isDirty && editableCols.has(col) ? { bgCell: dirtyColor } : undefined;
+        const themeOverride = (isDirty || hasData) ? { bgCell: dirtyColor } : undefined;
 
         switch (col) {
             case 0:
@@ -70,7 +72,14 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark 
                 };
             }
             case 3:
-                return { kind: GridCellKind.Text, data: item.note || '', displayData: item.note || '', themeOverride, readonly: false };
+                return {
+                    kind: GridCellKind.Text,
+                    data: item.note || '',
+                    displayData: item.note || '',
+                    themeOverride,
+                    readonly: false,
+                    allowOverlay: true
+                };
             default:
                 return { kind: GridCellKind.Text, data: '', displayData: '', readonly: true };
         }
@@ -145,8 +154,9 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark 
                 columns={columns}
                 getCellContent={getCellContent}
                 rows={answers.length}
+                width="100%"
                 onCellEdited={onCellEdited}
-                rowMarkers="both"
+                rowMarkers="none"
                 smoothScrollX
                 smoothScrollY
                 height="100%"
