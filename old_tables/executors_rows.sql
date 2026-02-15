@@ -1,1 +1,0 @@
-INSERT INTO "public"."executors" ("id", "sort", "date_created", "date_updated", "name", "note") VALUES ('1', null, '2025-10-09 18:09:44.358+00', null, 'Бизнес', null), ('2', null, '2025-10-09 18:09:52.632+00', null, 'Мидл-офис', null), ('3', null, '2025-10-09 18:10:00.604+00', null, 'Фронт-офис', null);

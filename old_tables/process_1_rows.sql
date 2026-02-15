@@ -1,1 +1,0 @@
-INSERT INTO "public"."process_1" ("f1_index", "f1_name", "sort", "note", "is_active", "level1_id") VALUES ('ACC', 'БУиНУ', '1', 'Бухгалтерский и налоговый учет', 'true', '1'), ('HR', 'УП', '2', 'Управление персоналом', 'false', '2');

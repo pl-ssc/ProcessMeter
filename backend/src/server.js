@@ -17,7 +17,7 @@ import fs from 'fs';
 
 const PORT = Number(process.env.PORT || 3001);
 const HOST = process.env.HOST || '0.0.0.0';
-const DATABASE_URL = process.env.DATABASE_URL;
+const TARGET_DATABASE_URL = process.env.TARGET_DATABASE_URL;
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
 const ADMIN_API_KEY = process.env.ADMIN_API_KEY || 'dev-admin-key';
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || '';
@@ -26,14 +26,14 @@ const ADMIN_FULL_NAME = process.env.ADMIN_FULL_NAME || '';
 const AUTO_MIGRATE = process.env.AUTO_MIGRATE !== 'false';
 const STATIC_DIR = process.env.STATIC_DIR || path.join(__dirname, '../../frontend/dist');
 
-if (!DATABASE_URL) {
-  console.error('DATABASE_URL is required');
+if (!TARGET_DATABASE_URL) {
+  console.error('TARGET_DATABASE_URL is required');
   process.exit(1);
 }
 
-const pool = new Pool({ connectionString: DATABASE_URL });
+const pool = new Pool({ connectionString: TARGET_DATABASE_URL });
 
-console.log(`Connecting to database at ${DATABASE_URL.replace(/:[^:@]+@/, ':***@')}`);
+console.log(`Connecting to database at ${TARGET_DATABASE_URL.replace(/:[^:@]+@/, ':***@')}`);
 
 const app = Fastify({ logger: true });
 

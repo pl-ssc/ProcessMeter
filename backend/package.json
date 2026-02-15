@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node src/server.js",
     "start": "node src/server.js",
-    "migrate": "psql $DATABASE_URL -f ../db/schema.sql",
+    "migrate": "psql $TARGET_DATABASE_URL -f ../db/schema.sql",
     "db:migrate": "node scripts/migrate.js"
   },
   "dependencies": {

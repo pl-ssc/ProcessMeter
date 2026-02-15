@@ -51,6 +51,7 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark 
                     data: item.labor_hours === null || item.labor_hours === undefined ? null : Number(item.labor_hours),
                     displayData: item.labor_hours === null || item.labor_hours === undefined ? '' : String(item.labor_hours),
                     themeOverride,
+                    allowOverlay: true,
                     readonly: false,
                 };
             case 2: {
