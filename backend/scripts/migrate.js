@@ -32,20 +32,12 @@ async function runMigration() {
     try {
         await targetClient.query('BEGIN');
 
-        // 1. Сохранение текущих доступов во временную таблицу
-        console.log('📦 Сохранение текущих прав доступа пользователей...');
-        const tempAccessRes = await targetClient.query(`
-      CREATE TEMP TABLE temp_access AS 
-      SELECT user_id, f1_index FROM user_process_1_access
-    `);
-        // Проверяем количество сохраненных записей
-        const { rows: tempAccessCount } = await targetClient.query('SELECT COUNT(*) FROM temp_access');
-        console.log(`   ℹ️  Сохранено записей прав доступа: ${tempAccessCount[0].count}`);
-
-
-        // 2. Очистка ответов и справочников
+        // 1. Очистка ответов и справочников (Сброс старой иерархии процессов)
+        // Каскадно удалит user_answers и user_process_1_access, так как миграция справочников
+        // должна запускаться ДО начала заполнения таблиц пользователями.
         console.log('🧹 Очистка старых ответов и справочников...');
-        const tablesToClear = ['user_answers', 'process_4', 'process_3', 'process_2', 'process_1', 'executors', 'systems'];
+        const tablesToClear = ['process_4', 'process_3', 'process_2', 'process_1', 'executors', 'systems'];
+        await targetClient.query(`TRUNCATE TABLE ${tablesToClear.join(', ')} CASCADE`);
         for (const table of tablesToClear) {
             await targetClient.query(`TRUNCATE TABLE ${table} CASCADE`);
             console.log(`   🗑️  Таблица ${table} очищена.`);
@@ -87,35 +79,18 @@ async function runMigration() {
             stats[table] = targetCount;
         }
 
-        // 4. Восстановление доступов
-        console.log('🔑 Восстановление прав доступа...');
-        const restoreRes = await targetClient.query(`
-      INSERT INTO user_process_1_access (user_id, f1_index)
-      SELECT t.user_id, t.f1_index 
-      FROM temp_access t
-      JOIN process_1 p1 ON p1.f1_index = t.f1_index
-      ON CONFLICT DO NOTHING
-    `);
-        console.log(`   ✅ Восстановлено прав доступа: ${restoreRes.rowCount}`);
-
-        // 5. Перегенерация пустых ответов для всех пользователей
-        console.log('📝 Генерация новых пустых форм ответов...');
-        console.log('   💾 Данные (ответы) записываются в: public.user_answers');
-        const { rows: users } = await targetClient.query("SELECT id, username FROM users WHERE is_active = true");
-        console.log(`   👥 Найдено активных пользователей: ${users.length}`);
-
-        for (const user of users) {
-            console.log(`   👤 Обработка пользователя: ${user.username} (ID: ${user.id})...`);
-            // Вызываем функцию копирования
-            await targetClient.query('SELECT copy_operations_to_user_answers($1)', [user.id]);
-        }
+        // 3.5. Восстановление связей по новым auto-generated ID
+        console.log('🔗 Вычисление связей foreign keys по новым id...');
+        await targetClient.query(`
+            UPDATE process_2 p2 SET process_1_id = p1.id FROM process_1 p1 WHERE p2.f1_index = p1.f1_index;
+            UPDATE process_3 p3 SET process_2_id = p2.id FROM process_2 p2 WHERE p3.f2_index = p2.f2_index;
+            UPDATE process_4 p4 SET process_3_id = p3.id FROM process_3 p3 WHERE p4.f3_index = p3.f3_index;
+        `);
 
         // Финальная сверка
         const { rows: p4Count } = await targetClient.query('SELECT COUNT(*) FROM process_4');
-        const { rows: ansCount } = await targetClient.query('SELECT COUNT(*) FROM user_answers');
         console.log('📊 Итоговая статистика:');
-        console.log(`   - Операций 4 уровня (process_4): ${p4Count[0].count}`);
-        console.log(`   - Ответов пользователей (user_answers): ${ansCount[0].count}`);
+        console.log(`   - Из эталона перенесено операций 4 уровня (process_4): ${p4Count[0].count}`);
 
 
         await targetClient.query('COMMIT');

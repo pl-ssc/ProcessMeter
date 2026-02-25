@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { apiFetch, getToken, setToken } from './api.js';
+import { apiFetch } from './api.js';
 import LoginPage from './components/LoginPage.jsx';
 import RespondentView from './components/RespondentView.jsx';
 import AdminView from './components/AdminView.jsx';
+import { AppSkeleton } from './components/Skeleton.jsx';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -11,16 +12,11 @@ export default function App() {
 
   useEffect(() => {
     const boot = async () => {
-      const token = getToken();
-      if (!token) {
-        setLoading(false);
-        return;
-      }
       try {
         const me = await apiFetch('/api/auth/me');
         setUser(me.user);
       } catch {
-        setToken('');
+        setUser(null);
       } finally {
         setLoading(false);
       }
@@ -35,20 +31,24 @@ export default function App() {
         method: 'POST',
         body: JSON.stringify({ username, password }),
       });
-      setToken(res.token);
       setUser(res.user);
     } catch (err) {
       setLoginError('Неверный логин или пароль');
     }
   };
 
-  const handleLogout = () => {
-    setToken('');
-    setUser(null);
+  const handleLogout = async () => {
+    try {
+      await apiFetch('/api/auth/logout', { method: 'POST' });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setUser(null);
+    }
   };
 
   if (loading) {
-    return <div className="page">Загрузка...</div>;
+    return <AppSkeleton />;
   }
 
   if (!user) {

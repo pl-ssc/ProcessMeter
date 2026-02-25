@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { apiFetch } from '../api.js';
 import { useAutoSave } from '../hooks/useAutoSave.js';
 import Header from './Header.jsx';
@@ -12,7 +12,10 @@ export default function RespondentView({ user, onLogout }) {
     const [selectedF3Index, setSelectedF3Index] = useState('');
     const [answers, setAnswers] = useState([]);
     const [dirtyMap, setDirtyMap] = useState(new Map());
-    const [sidebarWidth, setSidebarWidth] = useState(window.innerWidth * 0.25);
+    const [sidebarWidth, setSidebarWidth] = useState(() => {
+        const saved = localStorage.getItem('pm_sidebar_width');
+        return saved ? Number(saved) : window.innerWidth * 0.25;
+    });
     const [isResizing, setIsResizing] = useState(false);
     const [isDark, setIsDark] = useState(false);
     const [stats, setStats] = useState({ total_hours: 0, fte: 0, status: 'not_started' });
@@ -24,6 +27,10 @@ export default function RespondentView({ user, onLogout }) {
     useEffect(() => {
         document.body.classList.toggle('dark-theme', isDark);
     }, [isDark]);
+
+    useEffect(() => {
+        localStorage.setItem('pm_sidebar_width', sidebarWidth.toString());
+    }, [sidebarWidth]);
 
     const loadStats = useCallback(async () => {
         try {
@@ -43,7 +50,7 @@ export default function RespondentView({ user, onLogout }) {
             setSystems(sys.systems || []);
             setProcesses(proc.process_3 || []);
             if (proc.process_3 && proc.process_3.length > 0) {
-                setSelectedF3Index(proc.process_3[0].f3_index);
+                setSelectedF3Index(String(proc.process_3[0].process_3_id));
             }
         };
         loadMeta();
@@ -53,7 +60,7 @@ export default function RespondentView({ user, onLogout }) {
     useEffect(() => {
         if (!selectedF3Index) return;
         const loadAnswers = async () => {
-            const res = await apiFetch(`/api/answers?f3_index=${encodeURIComponent(selectedF3Index)}`);
+            const res = await apiFetch(`/api/answers?process_3_id=${encodeURIComponent(selectedF3Index)}`);
             setAnswers(res.answers || []);
             setDirtyMap(new Map());
         };
@@ -116,13 +123,18 @@ export default function RespondentView({ user, onLogout }) {
         }
     };
 
-    const handleSelectF3 = (f3Index) => {
-        if (dirtyMap.size > 0) {
+    const dirtyMapRef = useRef(dirtyMap);
+    useEffect(() => {
+        dirtyMapRef.current = dirtyMap;
+    }, [dirtyMap]);
+
+    const handleSelectF3 = useCallback((f3Index) => {
+        if (dirtyMapRef.current.size > 0) {
             const ok = window.confirm('Есть несохраненные изменения. Перейти и потерять изменения?');
             if (!ok) return;
         }
         setSelectedF3Index(f3Index);
-    };
+    }, []);
 
     const startResizing = useCallback((e) => {
         setIsResizing(true);

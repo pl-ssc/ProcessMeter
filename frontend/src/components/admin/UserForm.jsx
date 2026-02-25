@@ -125,12 +125,12 @@ export default function UserForm({ user, onClose, onSuccess }) {
                         <div className="access-grid">
                             {process1List.map(p => (
                                 <div
-                                    key={p.f1_index}
-                                    className={`access-item ${formData.process_1_access.includes(p.f1_index) ? 'selected' : ''}`}
-                                    onClick={() => toggleAccess(p.f1_index)}
+                                    key={p.id}
+                                    className={`access-item ${formData.process_1_access.includes(p.id) ? 'selected' : ''}`}
+                                    onClick={() => toggleAccess(p.id)}
                                 >
                                     <div className="checkbox">
-                                        {formData.process_1_access.includes(p.f1_index) && <Check size={12} />}
+                                        {formData.process_1_access.includes(p.id) && <Check size={12} />}
                                     </div>
                                     <span>{p.f1_name}</span>
                                 </div>
