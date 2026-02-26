@@ -1,7 +1,10 @@
 import { env } from '../../config/env.js';
 
 export default async function adminNocodbRoutes(fastify, options) {
-    const baseUrl = env.NOCODB_URL;
+    let baseUrl = env.NOCODB_URL || '';
+    if (baseUrl && !baseUrl.endsWith('/')) {
+        baseUrl += '/';
+    }
     const token = env.NOCODB_API_TOKEN;
     const authHeaders = {
         'xc-token': token,
@@ -15,19 +18,17 @@ export default async function adminNocodbRoutes(fastify, options) {
             throw new Error('NocoDB credentials (NOCODB_URL, NOCODB_API_TOKEN) are not configured on the server');
         }
 
-        const wsRes = await fetch(`${baseUrl}api/v1/workspaces`, { headers: authHeaders });
-        if (!wsRes.ok) throw new Error(`Failed to fetch workspaces, status: ${wsRes.status}`);
-        const wsData = await wsRes.json();
-        const workspaceId = wsData?.list?.[0]?.id;
+        const baseRes = await fetch(`${baseUrl}api/v1/db/meta/projects`, { headers: authHeaders });
+        if (!baseRes.ok) {
+            const errorText = await baseRes.text();
+            request.log?.error('NocoDB Error (fetch projects): ' + errorText);
+            throw new Error(`Failed to fetch NocoDB projects, status: ${baseRes.status}`);
+        }
 
-        if (!workspaceId) throw new Error('No workspaces found');
-
-        const baseRes = await fetch(`${baseUrl}api/v1/workspaces/${workspaceId}/bases`, { headers: authHeaders });
-        if (!baseRes.ok) throw new Error('Failed to fetch bases');
         const bases = await baseRes.json();
-
         const baseId = bases?.list?.[0]?.id;
-        if (!baseId) throw new Error('No bases found in workspace');
+
+        if (!baseId) throw new Error('No bases found in NocoDB');
 
         return baseId;
     }
