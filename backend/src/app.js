@@ -17,6 +17,7 @@ import adminProfessionsRoutes from './routes/admin/professions.js';
 import adminProcessesRoutes from './routes/admin/processes.js';
 import adminImportRoutes from './routes/admin/import.js';
 import adminSettingsRoutes from './routes/admin/settings.js';
+import adminNocodbRoutes from './routes/admin/nocodb.js';
 import usersRoutes from './routes/users.js';
 import processesRoutes from './routes/processes.js';
 
@@ -54,6 +55,7 @@ export async function buildApp(opts = {}) {
     app.register(adminProcessesRoutes, { prefix: '/api/admin' });
     app.register(adminImportRoutes, { prefix: '/api/admin' });
     app.register(adminSettingsRoutes, { prefix: '/api/admin' });
+    app.register(adminNocodbRoutes, { prefix: '/api/admin/nocodb' });
     app.register(usersRoutes, { prefix: '/api/users' });
     app.register(processesRoutes, { prefix: '/api' });
 

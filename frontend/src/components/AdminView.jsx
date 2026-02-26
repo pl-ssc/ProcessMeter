@@ -14,6 +14,7 @@ import UserManagement from './admin/UserManagement.jsx';
 import DataImport from './admin/DataImport.jsx';
 import SmtpSettings from './admin/SmtpSettings.jsx';
 import Dictionaries from './admin/Dictionaries.jsx';
+import NocodbUsers from './admin/NocodbUsers.jsx';
 
 export default function AdminView({ user, onLogout }) {
     const [activeTab, setActiveTab] = useState('users');
@@ -24,6 +25,7 @@ export default function AdminView({ user, onLogout }) {
         { id: 'dictionaries', label: 'Справочники', icon: BookOpen },
         { id: 'import', label: 'Импорт данных', icon: Database },
         { id: 'settings', label: 'Настройки', icon: Settings },
+        { id: 'nocodb', label: 'Эталонная база', icon: Database }
     ];
 
     return (
@@ -58,16 +60,6 @@ export default function AdminView({ user, onLogout }) {
                                 {isSidebarOpen && <span>{item.label}</span>}
                             </button>
                         ))}
-                        <a
-                            href="https://plnsi.processlabs.ru/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="nav-item"
-                            style={{ textDecoration: 'none', color: 'inherit' }}
-                        >
-                            <Database size={20} />
-                            {isSidebarOpen && <span>NocoDB (Эталоны)</span>}
-                        </a>
                     </nav>
 
                     <div className="sidebar-footer">
@@ -106,6 +98,10 @@ export default function AdminView({ user, onLogout }) {
                             <h1>Настройки приложения</h1>
                             <SmtpSettings />
                         </div>
+                    )}
+
+                    {activeTab === 'nocodb' && (
+                        <NocodbUsers />
                     )}
                 </main>
             </div>
