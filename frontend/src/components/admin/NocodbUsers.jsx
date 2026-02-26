@@ -63,27 +63,45 @@ export default function NocodbUsers() {
     };
 
     return (
-        <div className="admin-content">
-            <div className="admin-header">
-                <div>
-                    <h2>Эталонная база (NocoDB)</h2>
-                    <p className="subtitle">Управление списком экспертов и доступ к редактированию справочников.</p>
+        <div className="user-management">
+            <div className="page-actions" style={{ justifyContent: 'space-between' }}>
+                <div className="search-bar" style={{ visibility: 'hidden' }}>
+                    {/* Placeholder to keep alignment if we ever add search */}
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
+                    <a
+                        href="https://plnsi.processlabs.ru/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ghost"
+                        style={{
+                            textDecoration: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '0.5rem 1rem',
+                            borderRadius: '0.375rem',
+                            fontWeight: 500,
+                            fontSize: '0.875rem',
+                            color: 'var(--text-main)',
+                            border: '1px solid var(--border-color)'
+                        }}
+                    >
+                        <Database size={18} />
+                        Перейти в редактор
+                    </a>
                     <button className="primary" onClick={() => setShowInviteModal(true)}>
                         <UserPlus size={18} />
                         Пригласить эксперта
                     </button>
-                    <a href="https://plnsi.processlabs.ru/" target="_blank" rel="noopener noreferrer" className="nav-item" style={{
-                        textDecoration: 'none', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', margin: 0, padding: 'var(--space-2) var(--space-4)', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-main)', fontWeight: 500
-                    }}>
-                        <Database size={18} />
-                        Перейти в редактор
-                    </a>
                 </div>
             </div>
 
-            {error && <div className="error-banner">{error}</div>}
+            {error && (
+                <div className="error-banner" style={{ marginBottom: '1rem', padding: '1rem', background: '#fee2e2', color: '#b91c1c', borderRadius: '0.375rem', border: '1px solid #f87171' }}>
+                    {error}
+                </div>
+            )}
 
             {loading ? (
                 <div className="loading-state">Загружаем список экспертов...</div>
@@ -131,8 +149,11 @@ export default function NocodbUsers() {
                             ))}
                             {users.length === 0 && (
                                 <tr>
-                                    <td colSpan="4" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-                                        Список экспертов пуст
+                                    <td colSpan="4" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                                            <Database size={32} style={{ color: 'var(--border-color)' }} />
+                                            <span>Список экспертов пуст</span>
+                                        </div>
                                     </td>
                                 </tr>
                             )}

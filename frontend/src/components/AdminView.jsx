@@ -101,7 +101,10 @@ export default function AdminView({ user, onLogout }) {
                     )}
 
                     {activeTab === 'nocodb' && (
-                        <NocodbUsers />
+                        <div className="admin-page">
+                            <h1>Эталонная база (NocoDB)</h1>
+                            <NocodbUsers />
+                        </div>
                     )}
                 </main>
             </div>

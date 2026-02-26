@@ -22,6 +22,8 @@ export const env = {
     STATIC_DIR: process.env.STATIC_DIR || path.join(__dirname, '../../../frontend/dist'),
     APP_URL: process.env.APP_URL || 'http://localhost:3001',
     ORG_NAME: process.env.ORG_NAME || 'ProcessMeter',
+    NOCODB_URL: process.env.NOCODB_URL,
+    NOCODB_API_TOKEN: process.env.NOCODB_API_TOKEN,
 };
 
 // Fail fast in production if critical secrets are not set
