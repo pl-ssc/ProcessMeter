@@ -1,7 +1,8 @@
 import bcrypt from 'bcryptjs';
 import pool, { query } from '../../db/index.js';
-import { createToken } from '../../services/tokenService.js';
-import { sendInviteEmail, sendResetEmail } from '../../services/emailService.js';
+import { createToken, deleteToken } from '../../services/tokenService.js';
+import { sendPasswordLinkEmail, isValidEmail } from '../../services/emailService.js';
+import { createUser } from '../../services/userService.js';
 
 export default async function adminUsersRoutes(fastify, options) {
     fastify.get('/', { preHandler: [fastify.authenticate, fastify.requireAdminRole] }, async (request) => {
@@ -223,43 +224,41 @@ export default async function adminUsersRoutes(fastify, options) {
         return { ok: true };
     });
 
-    // ── Send invitation email ────────────────────────────────────────────────
+    // ── Send invitation or password-reset email ──────────────────────────────
+    // Unified handler: POST /:id/send-invite  and  POST /:id/send-reset
+    async function sendEmailHandler(type, request, reply) {
+        const { id } = request.params;
+        const { rows } = await query(
+            'SELECT id, username, full_name FROM users WHERE id = $1 AND is_active = true',
+            [id]
+        );
+        if (!rows[0]) return reply.code(404).send({ error: 'user not found' });
+
+        const { username, full_name } = rows[0];
+
+        if (!isValidEmail(username)) {
+            return reply.code(422).send({ error: `Email пользователя невалиден: ${username}` });
+        }
+
+        const token = await createToken(id, type);
+        try {
+            await sendPasswordLinkEmail({ type, to: username, fullName: full_name, token });
+        } catch (err) {
+            request.log.error(err, `sendPasswordLinkEmail (${type}) failed`);
+            // Roll back the token so it doesn't linger unused
+            await deleteToken(token).catch(e => request.log.error(e, 'deleteToken failed'));
+            return reply.code(500).send({ error: 'Не удалось отправить письмо. Проверьте SMTP-настройки.' });
+        }
+        return { ok: true };
+    }
+
     fastify.post('/:id/send-invite', {
         preHandler: [fastify.authenticate, fastify.requireAdminRole],
         schema: { params: { type: 'object', properties: { id: { type: 'integer' } }, required: ['id'] } }
-    }, async (request, reply) => {
-        const { id } = request.params;
-        const { rows } = await query('SELECT id, username, full_name FROM users WHERE id = $1 AND is_active = true', [id]);
-        if (!rows[0]) return reply.code(404).send({ error: 'user not found' });
+    }, (request, reply) => sendEmailHandler('invite', request, reply));
 
-        const { username, full_name } = rows[0];
-        const token = await createToken(id, 'invite');
-        try {
-            await sendInviteEmail({ to: username, fullName: full_name, token });
-        } catch (err) {
-            request.log.error(err);
-            return reply.code(500).send({ error: 'Не удалось отправить письмо. Проверьте SMTP-настройки.' });
-        }
-        return { ok: true };
-    });
-
-    // ── Send password reset email ────────────────────────────────────────────
     fastify.post('/:id/send-reset', {
         preHandler: [fastify.authenticate, fastify.requireAdminRole],
         schema: { params: { type: 'object', properties: { id: { type: 'integer' } }, required: ['id'] } }
-    }, async (request, reply) => {
-        const { id } = request.params;
-        const { rows } = await query('SELECT id, username, full_name FROM users WHERE id = $1 AND is_active = true', [id]);
-        if (!rows[0]) return reply.code(404).send({ error: 'user not found' });
-
-        const { username, full_name } = rows[0];
-        const token = await createToken(id, 'reset');
-        try {
-            await sendResetEmail({ to: username, fullName: full_name, token });
-        } catch (err) {
-            request.log.error(err);
-            return reply.code(500).send({ error: 'Не удалось отправить письмо. Проверьте SMTP-настройки.' });
-        }
-        return { ok: true };
-    });
+    }, (request, reply) => sendEmailHandler('reset', request, reply));
 }

@@ -13,6 +13,8 @@ import {
 
 import UserForm from './UserForm.jsx';
 
+const TOAST_DURATION_MS = 4000;
+
 export default function UserManagement() {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -57,7 +59,7 @@ export default function UserManagement() {
 
     const showToast = (type, msg) => {
         setToast({ type, msg });
-        setTimeout(() => setToast(null), 4000);
+        setTimeout(() => setToast(null), TOAST_DURATION_MS);
     };
 
     const sendEmail = async (userId, action) => {

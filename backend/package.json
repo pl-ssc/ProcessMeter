@@ -8,12 +8,14 @@
     "start": "node src/start.js",
     "migrate": "node-pg-migrate -d TARGET_DATABASE_URL",
     "migrate:up": "node-pg-migrate -d TARGET_DATABASE_URL up",
-    "migrate:down": "node-pg-migrate -d TARGET_DATABASE_URL down"
+    "migrate:down": "node-pg-migrate -d TARGET_DATABASE_URL down",
+    "test": "node tests/migrate.js && node --test --test-concurrency=1 tests/*.test.js"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.2.0",
     "@fastify/jwt": "^10.0.0",
+    "@fastify/rate-limit": "^10.3.0",
     "@fastify/static": "^9.0.0",
     "bcryptjs": "^2.4.3",
     "dotenv": "^16.4.5",

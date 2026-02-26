@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { query } from '../db/index.js';
-import { createToken, validateToken, markTokenUsed } from '../services/tokenService.js';
-import { sendInviteEmail, sendResetEmail } from '../services/emailService.js';
+import { createToken, validateToken, markTokenUsed, deleteToken } from '../services/tokenService.js';
+import { sendPasswordLinkEmail } from '../services/emailService.js';
 
 export default async function authRoutes(fastify, options) {
     // ── Login ────────────────────────────────────────────────────────────────
@@ -58,8 +58,9 @@ export default async function authRoutes(fastify, options) {
         return { user: request.user };
     });
 
-    // ── Forgot password (public) ─────────────────────────────────────────────
+    // ── Forgot password (public, rate-limited) ───────────────────────────────
     fastify.post('/forgot-password', {
+        config: { rateLimit: { max: 5, timeWindow: '15 minutes' } },
         schema: {
             body: { type: 'object', properties: { username: { type: 'string' } }, required: ['username'] }
         }
@@ -72,18 +73,24 @@ export default async function authRoutes(fastify, options) {
         );
         const user = rows[0];
         if (user) {
+            let token;
             try {
-                const token = await createToken(user.id, 'reset');
-                await sendResetEmail({ to: user.username, fullName: user.full_name, token });
+                token = await createToken(user.id, 'reset');
+                await sendPasswordLinkEmail({ type: 'reset', to: user.username, fullName: user.full_name, token });
             } catch (err) {
-                request.log.error(err, 'sendResetEmail failed');
+                request.log.error(err, 'forgot-password: send failed');
+                // Roll back the token so it doesn't linger unused
+                if (token) {
+                    await deleteToken(token).catch(e => request.log.error(e, 'deleteToken failed'));
+                }
             }
         }
         return { ok: true };
     });
 
-    // ── Validate token (public — used by front to show the form) ─────────────
+    // ── Validate token (public, rate-limited) ────────────────────────────────
     fastify.get('/token-info', {
+        config: { rateLimit: { max: 20, timeWindow: '5 minutes' } },
         schema: { querystring: { type: 'object', properties: { token: { type: 'string' } }, required: ['token'] } }
     }, async (request, reply) => {
         try {
@@ -108,6 +115,12 @@ export default async function authRoutes(fastify, options) {
         }
     }, async (request, reply) => {
         const { token, password } = request.body;
+
+        // Reject passwords that are only whitespace
+        if (!password.trim()) {
+            return reply.code(400).send({ error: 'Пароль не может состоять только из пробелов.' });
+        }
+
         let info;
         try {
             info = await validateToken(token);

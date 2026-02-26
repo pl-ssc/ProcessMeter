@@ -58,7 +58,13 @@ export default function App() {
     }
   };
 
+  // ─── Show skeleton while checking session ───────────────────────────────
+  if (loading) {
+    return <AppSkeleton />;
+  }
+
   // ─── Token link from invitation / reset email ────────────────────────────
+  // Checked after loading to avoid showing the form to already-authenticated users
   if (setPasswordToken) {
     return (
       <SetPasswordPage
@@ -70,10 +76,6 @@ export default function App() {
         }}
       />
     );
-  }
-
-  if (loading) {
-    return <AppSkeleton />;
   }
 
   if (!user) {

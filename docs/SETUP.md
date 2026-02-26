@@ -1,72 +1,102 @@
 # Настройка локальной разработки
 
-## 1) Запуск Postgres
-```bash
-cd /Users/romangaleev/Documents/CodeProject/ProcessMeter
+## 1. Запуск PostgreSQL
 
+```bash
 docker compose up -d db
 ```
 
-## 2) Применение схемы
+## 2. Создание `.env`
+
 ```bash
-export DATABASE_URL=postgres://postgres:postgres@localhost:5432/processmeter
-npm --prefix /Users/romangaleev/Documents/CodeProject/ProcessMeter/backend run migrate
+cp .env.example .env
 ```
 
-Если у тебя уже есть существующая БД и нужно добавить роль:
-```sql
-ALTER TABLE users ADD COLUMN IF NOT EXISTS role text NOT NULL DEFAULT 'respondent';
+Минимум для локальной разработки:
+```env
+TARGET_DATABASE_URL=postgres://postgres:postgres@localhost:5432/processmeter
+JWT_SECRET=dev-only-secret
+APP_URL=http://localhost:3001
+ADMIN_USERNAME=admin@example.com
+ADMIN_PASSWORD=admin123
+ADMIN_FULL_NAME=Администратор
+ORG_NAME=МояОрганизация
 ```
 
-## 2.1) Автомиграции при первом запуске
-Бэкенд сам применит `db/schema.sql`, если `AUTO_MIGRATE=true` (по умолчанию).  
-При этом администратор будет создан автоматически из `ADMIN_USERNAME/ADMIN_PASSWORD`.
+> `NODE_ENV` **не устанавливайте** локально — тогда проверка обязательных production-переменных не будет срабатывать.
 
-## 2.2) Импорт процессов и справочников
-В админ‑интерфейсе есть раздел «Импорт процессов и справочников».  
-Он загружает данные таблиц `process_1..4`, `systems`, `executors` из внешней БД.
+## 3. Установка зависимостей
 
-Важно: при импорте **очищаются ответы пользователей** и создаются новые пустые ответы под новую структуру.
-
-## 3) Импорт справочников (опционально)
-Если нужно подтянуть реальные данные из удалённой БД, можно сделать так:
 ```bash
-pg_dump "postgresql://postgres:xdlwaqfbwkiknibn@45.153.191.107:5436/postgres" \
+cd backend && npm install
+cd ../frontend && npm install
+cd ..
+```
+
+## 4. Применение миграций
+
+```bash
+cd backend
+npm run migrate:up
+```
+
+Миграции хранятся в `backend/migrations/`. При запуске через `npm start` применяются автоматически через `start.js`.
+
+## 5. Запуск бэкенда
+
+```bash
+cd backend
+npm run dev
+# Сервер поднимается на http://localhost:3001
+```
+
+## 6. Запуск фронтенда
+
+```bash
+cd frontend
+npm run dev
+# Vite запускается на http://localhost:5173
+# API проксируется на http://localhost:3001
+```
+
+## 7. Первый вход
+
+Откройте `http://localhost:5173` и войдите с учётными данными из `ADMIN_USERNAME` / `ADMIN_PASSWORD`.
+
+## 8. Настройка SMTP (опционально)
+
+Если нужна отправка email локально — используйте [Mailpit](https://github.com/axllent/mailpit) или аналогичный SMTP-catching сервер:
+
+```bash
+docker run -d -p 1025:1025 -p 8025:8025 axllent/mailpit
+```
+
+В интерфейсе администратора (Настройки → SMTP):
+- Host: `localhost`, Port: `1025`, Secure: выключено
+- User/Password: любые
+
+Веб-интерфейс Mailpit: `http://localhost:8025`
+
+## 9. Импорт справочников (опционально)
+
+Если есть доступ к эталонной БД:
+
+```bash
+pg_dump "$SOURCE_DATABASE_URL" \
   --data-only --column-inserts \
   --table=process_1 --table=process_2 --table=process_3 --table=process_4 \
   --table=systems --table=executors \
   > /tmp/pm_seed.sql
 
-psql "postgres://postgres:postgres@localhost:5432/processmeter" -f /tmp/pm_seed.sql
+psql "$TARGET_DATABASE_URL" -f /tmp/pm_seed.sql
 ```
 
-## 4) Создание пользователя
-```bash
-export DATABASE_URL=postgres://postgres:postgres@localhost:5432/processmeter
-node /Users/romangaleev/Documents/CodeProject/ProcessMeter/backend/scripts/create-user.js user1 pass123 "Иван Иванов"
-```
+Либо через API администратора: **Администрирование → Импорт**.
 
-## 5) Запуск бэкенда
-```bash
-export DATABASE_URL=postgres://postgres:postgres@localhost:5432/processmeter
-export JWT_SECRET=change-me
-export ADMIN_API_KEY=change-me
-export ADMIN_USERNAME="r.i.galeev@gmail.com"
-export ADMIN_PASSWORD="G@leevR0m@n"
-export ADMIN_FULL_NAME="Роман Галеев"
-npm --prefix /Users/romangaleev/Documents/CodeProject/ProcessMeter/backend run dev
-```
+## Полный деплой в один контейнер
 
-## 6) Запуск фронтенда
-```bash
-export VITE_API_URL=http://localhost:3001
-npm --prefix /Users/romangaleev/Documents/CodeProject/ProcessMeter/frontend run dev
-```
-
-Открой: `http://localhost:5173`
-
-## Деплой (один контейнер приложения)
 ```bash
 docker compose up --build
 ```
-Фронт и бэк будут доступы на `http://localhost:3001`.
+
+Фронт и бэк доступны на `http://localhost:3001`.
