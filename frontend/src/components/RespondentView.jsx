@@ -115,7 +115,6 @@ export default function RespondentView({ user, onLogout }) {
         if (!window.confirm('Отправить изменения?')) return;
         try {
             await apiFetch('/api/answers/complete', { method: 'POST' });
-            setAnswers((prev) => prev.map((r) => ({ ...r, is_done: true, done_at: new Date().toISOString() })));
             loadStats(); // Update stats after submit
             window.alert('Изменения отправлены');
         } catch (err) {
@@ -200,6 +199,7 @@ export default function RespondentView({ user, onLogout }) {
                     onEdit={handleEdit}
                     dirtyMap={dirtyMap}
                     isDark={isDark}
+                    isSubmitted={stats.status === 'completed'}
                 />
             </div>
         </div>

@@ -131,4 +131,38 @@ test('Respondent & Processes API', async (t) => {
         assert.strictEqual(body.status, 'completed');
         assert.strictEqual(body.is_submitted, true);
     });
+    await t.test('POST /api/answers/bulk and /complete - Blocks when survey is completed', async () => {
+        const user = await createTestUser({ email: 'locked@test.com', password: '123' });
+        const token = await getAuthCookie(app, user);
+
+        // 1. Завершаем опрос
+        await pool.query('UPDATE users SET is_survey_completed = true WHERE id = $1', [user.id]);
+
+        // 2. Пытаемся сохранить ответы
+        const bulkRes = await app.inject({
+            method: 'POST',
+            url: '/api/answers/bulk',
+            headers: { cookie: token },
+            payload: {
+                items: [
+                    { operation_id: 10, labor_hours: 8, system_id: 1, note: 'Attempt' }
+                ]
+            }
+        });
+
+        assert.strictEqual(bulkRes.statusCode, 403);
+        const bulkBody = JSON.parse(bulkRes.payload);
+        assert.strictEqual(bulkBody.error, 'Survey is already completed and locked for editing.');
+
+        // 3. Пытаемся завершить повторно
+        const completeRes = await app.inject({
+            method: 'POST',
+            url: '/api/answers/complete',
+            headers: { cookie: token }
+        });
+
+        assert.strictEqual(completeRes.statusCode, 403);
+        const completeBody = JSON.parse(completeRes.payload);
+        assert.strictEqual(completeBody.error, 'Survey is already completed and locked.');
+    });
 });

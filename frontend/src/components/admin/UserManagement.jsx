@@ -206,7 +206,22 @@ export default function UserManagement() {
                                                 {u.full_name?.charAt(0) || u.username.charAt(0)}
                                             </div>
                                             <div className="user-details">
-                                                <span className="user-name">{u.full_name || 'Без имени'}</span>
+                                                <span className="user-name" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                    {u.full_name || 'Без имени'}
+                                                    {u.role === 'respondent' && (
+                                                        <span
+                                                            title={u.is_survey_completed ? 'Опрос завершен' : 'Опрос в процессе'}
+                                                            style={{
+                                                                width: 8,
+                                                                height: 8,
+                                                                borderRadius: '50%',
+                                                                backgroundColor: u.is_survey_completed ? '#f97316' : '#10b981',
+                                                                display: 'inline-block',
+                                                                flexShrink: 0
+                                                            }}
+                                                        />
+                                                    )}
+                                                </span>
                                                 <span className="user-email">{u.username}</span>
                                             </div>
                                         </div>

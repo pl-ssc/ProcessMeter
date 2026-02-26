@@ -36,7 +36,7 @@ export default async function adminUsersRoutes(fastify, options) {
 
         const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
         const { rows } = await query(
-            `SELECT u.id, u.username, u.full_name, u.role, u.is_active, u.created_at,
+            `SELECT u.id, u.username, u.full_name, u.role, u.is_active, u.created_at, u.is_survey_completed,
               u.department_id, d.name AS department_name,
               u.profession_id, p.name AS profession_name,
               COALESCE(count(a.process_1_id), 0) AS access_count

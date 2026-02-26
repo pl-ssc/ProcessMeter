@@ -54,8 +54,6 @@ export default async function processesRoutes(fastify, options) {
           ua.labor_hours,
           ua.system_id,
           ua.note,
-          ua.is_done,
-          ua.done_at,
           p4.id as p4_id,
           p4.f4_name,
           p4.process_3_id,
@@ -112,6 +110,13 @@ export default async function processesRoutes(fastify, options) {
 
         const client = await pool.connect();
         try {
+            // Check if user is already completed
+            const { rows: userRows } = await client.query('SELECT is_survey_completed FROM users WHERE id = $1', [userId]);
+            if (userRows.length > 0 && userRows[0].is_survey_completed) {
+                client.release();
+                return reply.code(403).send({ error: 'Survey is already completed and locked for editing.' });
+            }
+
             await client.query('BEGIN');
             const opIds = [];
             const hours = [];
@@ -154,13 +159,20 @@ export default async function processesRoutes(fastify, options) {
         return { ok: true };
     });
 
-    fastify.post('/answers/complete', { preHandler: [fastify.authenticate] }, async (request) => {
+    fastify.post('/answers/complete', { preHandler: [fastify.authenticate] }, async (request, reply) => {
         const userId = request.user.sub;
+
+        // Block if already complete
+        const { rows: userRows } = await query('SELECT is_survey_completed FROM users WHERE id = $1', [userId]);
+        if (userRows.length > 0 && userRows[0].is_survey_completed) {
+            return reply.code(403).send({ error: 'Survey is already completed and locked.' });
+        }
+
         const { rows } = await query(
-            `UPDATE user_answers
-       SET is_done = true, done_at = now()
-       WHERE user_id = $1 AND is_done IS DISTINCT FROM true
-       RETURNING id`,
+            `UPDATE users
+             SET is_survey_completed = true, survey_completed_at = now()
+             WHERE id = $1 AND is_survey_completed = false
+             RETURNING id`,
             [userId]
         );
 
@@ -172,10 +184,12 @@ export default async function processesRoutes(fastify, options) {
 
         const { rows: stats } = await query(
             `SELECT 
-         COALESCE(SUM(labor_hours), 0) as total_hours,
-         BOOL_OR(is_done) as is_submitted
-       FROM user_answers 
-       WHERE user_id = $1`,
+         COALESCE(SUM(ua.labor_hours), 0) as total_hours,
+         u.is_survey_completed as is_submitted
+       FROM users u
+       LEFT JOIN user_answers ua ON ua.user_id = u.id
+       WHERE u.id = $1
+       GROUP BY u.id, u.is_survey_completed`,
             [userId]
         );
 

@@ -10,7 +10,7 @@ const defaultColumns = [
     { id: 'note', title: 'Примечание', width: 320, icon: 'info' },
 ];
 
-export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark }) {
+export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark, isSubmitted }) {
     const [columns, setColumns] = useState(defaultColumns);
     const [tooltip, setTooltip] = useState({ visible: false, text: '', x: 0, y: 0 });
     const HEADER_ICON_SIZE = 18;
@@ -83,14 +83,14 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark 
                     data: item.labor_hours === null || item.labor_hours === undefined ? null : Number(item.labor_hours),
                     displayData: item.labor_hours === null || item.labor_hours === undefined ? '' : String(item.labor_hours),
                     themeOverride,
-                    allowOverlay: true,
-                    readonly: false,
+                    allowOverlay: !isSubmitted,
+                    readonly: isSubmitted,
                 };
             case 2: {
                 const name = item.system_id ? systemsById.get(item.system_id) || '' : '';
                 return {
                     kind: GridCellKind.Custom,
-                    allowOverlay: true,
+                    allowOverlay: !isSubmitted,
                     copyData: name,
                     data: {
                         kind: "dropdown-cell",
@@ -98,7 +98,7 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark 
                         value: name,
                     },
                     themeOverride,
-                    readonly: false,
+                    readonly: isSubmitted,
                 };
             }
             case 3:
@@ -107,15 +107,16 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark 
                     data: item.note || '',
                     displayData: item.note || '',
                     themeOverride,
-                    readonly: false,
-                    allowOverlay: true
+                    readonly: isSubmitted,
+                    allowOverlay: !isSubmitted
                 };
             default:
                 return { kind: GridCellKind.Text, data: '', displayData: '', readonly: true };
         }
-    }, [answers, systemsById, systemOptions, dirtyMap, isDark]);
+    }, [answers, systemsById, systemOptions, dirtyMap, isDark, isSubmitted]);
 
     const onCellEdited = React.useCallback((cell, newValue) => {
+        if (isSubmitted) return;
         const [col, row] = cell;
         const item = answers[row];
         if (!item) return;
