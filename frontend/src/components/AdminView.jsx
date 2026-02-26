@@ -58,6 +58,16 @@ export default function AdminView({ user, onLogout }) {
                                 {isSidebarOpen && <span>{item.label}</span>}
                             </button>
                         ))}
+                        <a
+                            href="https://plnsi.processlabs.ru/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="nav-item"
+                            style={{ textDecoration: 'none', color: 'inherit' }}
+                        >
+                            <Database size={20} />
+                            {isSidebarOpen && <span>NocoDB (Эталоны)</span>}
+                        </a>
                     </nav>
 
                     <div className="sidebar-footer">
