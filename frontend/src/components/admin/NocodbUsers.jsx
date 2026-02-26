@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Database, UserPlus, FileEdit, Trash2, Eye, ShieldAlert, Loader2, Send } from 'lucide-react';
-import { apiFetch } from '../../utils/api.js';
+import { apiFetch } from '../../api.js';
 
 export default function NocodbUsers() {
     const [users, setUsers] = useState([]);
