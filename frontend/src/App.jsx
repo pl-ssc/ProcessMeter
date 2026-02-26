@@ -3,12 +3,23 @@ import { apiFetch } from './api.js';
 import LoginPage from './components/LoginPage.jsx';
 import RespondentView from './components/RespondentView.jsx';
 import AdminView from './components/AdminView.jsx';
+import SetPasswordPage from './components/SetPasswordPage.jsx';
 import { AppSkeleton } from './components/Skeleton.jsx';
+
+/** Reads ?action=set-password&token=... from the URL */
+function getSetPasswordToken() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('action') === 'set-password' && params.get('token')) {
+    return params.get('token');
+  }
+  return null;
+}
 
 export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loginError, setLoginError] = useState('');
+  const [setPasswordToken, setSetPasswordToken] = useState(getSetPasswordToken);
 
   useEffect(() => {
     const boot = async () => {
@@ -47,6 +58,20 @@ export default function App() {
     }
   };
 
+  // ─── Token link from invitation / reset email ────────────────────────────
+  if (setPasswordToken) {
+    return (
+      <SetPasswordPage
+        token={setPasswordToken}
+        onDone={() => {
+          // Clear token from URL and go to login
+          window.history.replaceState({}, '', '/');
+          setSetPasswordToken(null);
+        }}
+      />
+    );
+  }
+
   if (loading) {
     return <AppSkeleton />;
   }
@@ -55,9 +80,6 @@ export default function App() {
     return <LoginPage onLogin={handleLogin} error={loginError} />;
   }
 
-  // Ролевая модель: если админ, по умолчанию показываем админку, 
-  // но даем возможность переключиться в режим респондента (если нужно).
-  // Для простоты сейчас: админы видят админку, респонденты — анкету.
   if (user.role === 'admin') {
     return <AdminView user={user} onLogout={handleLogout} />;
   }

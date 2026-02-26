@@ -3,12 +3,12 @@ import { apiFetch } from '../../api.js';
 import {
     UserPlus,
     Search,
-    Filter,
-    MoreVertical,
     UserCheck,
     UserMinus,
     Key,
-    Edit
+    Edit,
+    Mail,
+    Loader2
 } from 'lucide-react';
 
 import UserForm from './UserForm.jsx';
@@ -20,6 +20,8 @@ export default function UserManagement() {
     const [roleFilter, setRoleFilter] = useState('all');
     const [showForm, setShowForm] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
+    const [actionLoading, setActionLoading] = useState({}); // { [userId_type]: true }
+    const [toast, setToast] = useState(null); // { type: 'success'|'error', msg }
 
     useEffect(() => {
         loadUsers();
@@ -53,8 +55,33 @@ export default function UserManagement() {
         }
     };
 
+    const showToast = (type, msg) => {
+        setToast({ type, msg });
+        setTimeout(() => setToast(null), 4000);
+    };
+
+    const sendEmail = async (userId, action) => {
+        const key = `${userId}_${action}`;
+        setActionLoading(prev => ({ ...prev, [key]: true }));
+        try {
+            await apiFetch(`/api/admin/users/${userId}/${action}`, { method: 'POST' });
+            showToast('success', action === 'send-invite'
+                ? 'Приглашение отправлено!'
+                : 'Ссылка для сброса пароля отправлена!');
+        } catch (err) {
+            showToast('error', err.message);
+        } finally {
+            setActionLoading(prev => ({ ...prev, [key]: false }));
+        }
+    };
+
     return (
         <div className="user-management">
+            {toast && (
+                <div className={`toast-message ${toast.type}`}>
+                    {toast.msg}
+                </div>
+            )}
             <div className="page-actions">
                 <div className="search-bar">
                     <Search size={18} className="search-icon" />
@@ -131,8 +158,25 @@ export default function UserManagement() {
                                             >
                                                 <Edit size={16} />
                                             </button>
-                                            <button className="ghost icon-btn" title="Сменить пароль">
-                                                <Key size={16} />
+                                            <button
+                                                className="ghost icon-btn"
+                                                title="Отправить приглашение"
+                                                onClick={() => sendEmail(u.id, 'send-invite')}
+                                                disabled={actionLoading[`${u.id}_send-invite`]}
+                                            >
+                                                {actionLoading[`${u.id}_send-invite`]
+                                                    ? <Loader2 size={16} className="animate-spin" />
+                                                    : <Mail size={16} />}
+                                            </button>
+                                            <button
+                                                className="ghost icon-btn"
+                                                title="Отправить сброс пароля"
+                                                onClick={() => sendEmail(u.id, 'send-reset')}
+                                                disabled={actionLoading[`${u.id}_send-reset`]}
+                                            >
+                                                {actionLoading[`${u.id}_send-reset`]
+                                                    ? <Loader2 size={16} className="animate-spin" />
+                                                    : <Key size={16} />}
                                             </button>
                                             <button
                                                 className="ghost icon-btn"

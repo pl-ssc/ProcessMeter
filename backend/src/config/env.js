@@ -18,4 +18,6 @@ export const env = {
     ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || '',
     ADMIN_FULL_NAME: process.env.ADMIN_FULL_NAME || '',
     STATIC_DIR: process.env.STATIC_DIR || path.join(__dirname, '../../../frontend/dist'),
+    APP_URL: process.env.APP_URL || 'http://localhost:3001',
+    ORG_NAME: process.env.ORG_NAME || 'ProcessMeter',
 };

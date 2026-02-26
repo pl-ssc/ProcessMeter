@@ -1,5 +1,7 @@
 import bcrypt from 'bcryptjs';
 import pool, { query } from '../../db/index.js';
+import { createToken } from '../../services/tokenService.js';
+import { sendInviteEmail, sendResetEmail } from '../../services/emailService.js';
 
 export default async function adminUsersRoutes(fastify, options) {
     fastify.get('/', { preHandler: [fastify.authenticate, fastify.requireAdminRole] }, async (request) => {
@@ -218,6 +220,46 @@ export default async function adminUsersRoutes(fastify, options) {
             client.release();
         }
 
+        return { ok: true };
+    });
+
+    // ── Send invitation email ────────────────────────────────────────────────
+    fastify.post('/:id/send-invite', {
+        preHandler: [fastify.authenticate, fastify.requireAdminRole],
+        schema: { params: { type: 'object', properties: { id: { type: 'integer' } }, required: ['id'] } }
+    }, async (request, reply) => {
+        const { id } = request.params;
+        const { rows } = await query('SELECT id, username, full_name FROM users WHERE id = $1 AND is_active = true', [id]);
+        if (!rows[0]) return reply.code(404).send({ error: 'user not found' });
+
+        const { username, full_name } = rows[0];
+        const token = await createToken(id, 'invite');
+        try {
+            await sendInviteEmail({ to: username, fullName: full_name, token });
+        } catch (err) {
+            request.log.error(err);
+            return reply.code(500).send({ error: 'Не удалось отправить письмо. Проверьте SMTP-настройки.' });
+        }
+        return { ok: true };
+    });
+
+    // ── Send password reset email ────────────────────────────────────────────
+    fastify.post('/:id/send-reset', {
+        preHandler: [fastify.authenticate, fastify.requireAdminRole],
+        schema: { params: { type: 'object', properties: { id: { type: 'integer' } }, required: ['id'] } }
+    }, async (request, reply) => {
+        const { id } = request.params;
+        const { rows } = await query('SELECT id, username, full_name FROM users WHERE id = $1 AND is_active = true', [id]);
+        if (!rows[0]) return reply.code(404).send({ error: 'user not found' });
+
+        const { username, full_name } = rows[0];
+        const token = await createToken(id, 'reset');
+        try {
+            await sendResetEmail({ to: username, fullName: full_name, token });
+        } catch (err) {
+            request.log.error(err);
+            return reply.code(500).send({ error: 'Не удалось отправить письмо. Проверьте SMTP-настройки.' });
+        }
         return { ok: true };
     });
 }
