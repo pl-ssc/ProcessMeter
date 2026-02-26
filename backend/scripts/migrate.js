@@ -79,14 +79,6 @@ async function runMigration() {
             stats[table] = targetCount;
         }
 
-        // 3.5. Восстановление связей по новым auto-generated ID
-        console.log('🔗 Вычисление связей foreign keys по новым id...');
-        await targetClient.query(`
-            UPDATE process_2 p2 SET process_1_id = p1.id FROM process_1 p1 WHERE p2.f1_index = p1.f1_index;
-            UPDATE process_3 p3 SET process_2_id = p2.id FROM process_2 p2 WHERE p3.f2_index = p2.f2_index;
-            UPDATE process_4 p4 SET process_3_id = p3.id FROM process_3 p3 WHERE p4.f3_index = p3.f3_index;
-        `);
-
         // Финальная сверка
         const { rows: p4Count } = await targetClient.query('SELECT COUNT(*) FROM process_4');
         console.log('📊 Итоговая статистика:');

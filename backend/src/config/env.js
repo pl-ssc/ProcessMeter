@@ -17,6 +17,5 @@ export const env = {
     ADMIN_USERNAME: process.env.ADMIN_USERNAME || '',
     ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || '',
     ADMIN_FULL_NAME: process.env.ADMIN_FULL_NAME || '',
-    AUTO_MIGRATE: process.env.AUTO_MIGRATE !== 'false',
     STATIC_DIR: process.env.STATIC_DIR || path.join(__dirname, '../../../frontend/dist'),
 };

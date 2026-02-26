@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "node src/server.js",
-    "start": "node src/server.js",
+    "start": "node src/start.js",
     "migrate": "node-pg-migrate -d TARGET_DATABASE_URL",
     "migrate:up": "node-pg-migrate -d TARGET_DATABASE_URL up",
     "migrate:down": "node-pg-migrate -d TARGET_DATABASE_URL down"

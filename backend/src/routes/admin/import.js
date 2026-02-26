@@ -51,20 +51,14 @@ export default async function adminImportRoutes(fastify, options) {
                 }
             };
 
-            await insertTable('process_1', ['f1_index', 'f1_name', 'note', 'is_active', 'sort']);
-            await insertTable('process_2', ['f2_index', 'f1_index', 'f2_name', 'sort', 'note', 'is_active']);
-            await insertTable('process_3', ['f3_index', 'f2_index', 'f3_name', 'sort', 'note', 'is_active']);
+            await insertTable('process_1', ['id', 'f1_name', 'note', 'is_active', 'sort']);
+            await insertTable('process_2', ['id', 'process_1_id', 'f2_name', 'sort', 'note', 'is_active']);
+            await insertTable('process_3', ['id', 'process_2_id', 'f3_name', 'sort', 'note', 'is_active']);
             await insertTable('executors', ['id', 'name', 'note']);
-            await insertTable('process_4', ['f4_index', 'f3_index', 'f4_name', 'sort', 'note', 'is_active', 'executor_id']);
+            await insertTable('process_4', ['id', 'process_3_id', 'f4_name', 'sort', 'note', 'is_active', 'executor_id']);
             await insertTable('systems', ['system_id', 'system_name', 'is_active']);
 
-            // Migrate refdb fX_index references to local auto-generated IDs
-            await client.query(`
-                UPDATE process_2 p2 SET process_1_id = p1.id FROM process_1 p1 WHERE p2.f1_index = p1.f1_index;
-                UPDATE process_3 p3 SET process_2_id = p2.id FROM process_2 p2 WHERE p3.f2_index = p2.f2_index;
-                UPDATE process_4 p4 SET process_3_id = p3.id FROM process_3 p3 WHERE p4.f3_index = p3.f3_index;
-            `);
-
+            // Done with inserts
             await client.query('COMMIT');
         } catch (err) {
             if (client) await client.query('ROLLBACK');

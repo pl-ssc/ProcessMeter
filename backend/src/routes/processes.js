@@ -13,13 +13,10 @@ export default async function processesRoutes(fastify, options) {
         const { rows } = await query(
             `SELECT 
           p3.id as process_3_id,
-          p3.f3_index, 
           p3.f3_name, 
           p2.id as process_2_id,
-          p2.f2_index, 
           p2.f2_name, 
           p1.id as process_1_id,
-          p1.f1_index, 
           p1.f1_name,
           EXISTS (
               SELECT 1 
