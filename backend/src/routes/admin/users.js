@@ -37,11 +37,15 @@ export default async function adminUsersRoutes(fastify, options) {
         const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
         const { rows } = await query(
             `SELECT u.id, u.username, u.full_name, u.role, u.is_active, u.created_at,
+              u.department_id, d.name AS department_name,
+              u.profession_id, p.name AS profession_name,
               COALESCE(count(a.process_1_id), 0) AS access_count
        FROM users u
        LEFT JOIN user_process_1_access a ON a.user_id = u.id
+       LEFT JOIN departments d ON d.id = u.department_id
+       LEFT JOIN professions p ON p.id = u.profession_id
        ${where}
-       GROUP BY u.id
+       GROUP BY u.id, d.name, p.name
        ORDER BY u.created_at DESC, u.id DESC`,
             params
         );
@@ -59,15 +63,17 @@ export default async function adminUsersRoutes(fastify, options) {
                     password: { type: 'string' },
                     full_name: { type: 'string', nullable: true },
                     role: { type: 'string', enum: ['admin', 'respondent'] },
+                    department_id: { type: ['integer', 'null'] },
+                    profession_id: { type: ['integer', 'null'] },
                     process_1_access: { type: 'array', items: { type: 'string' }, minItems: 1 }
                 },
                 required: ['username', 'password', 'process_1_access']
             }
         }
     }, async (request, reply) => {
-        const { username, password, full_name, role, process_1_access } = request.body;
+        const { username, password, full_name, role, department_id, profession_id, process_1_access } = request.body;
         try {
-            const user = await createUser({ username, password, full_name, role, process_1_access });
+            const user = await createUser({ username, password, full_name, role, department_id, profession_id, process_1_access });
             return { user };
         } catch (err) {
             request.log.error(err);

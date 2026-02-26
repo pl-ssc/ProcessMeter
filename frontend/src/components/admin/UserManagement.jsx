@@ -118,6 +118,8 @@ export default function UserManagement() {
                             <tr>
                                 <th>Пользователь</th>
                                 <th>Роль</th>
+                                <th>Подразделение</th>
+                                <th>Профессия</th>
                                 <th>Доступы</th>
                                 <th>Статус</th>
                                 <th>Действия</th>
@@ -141,6 +143,12 @@ export default function UserManagement() {
                                         <span className={`badge ${u.role}`}>
                                             {u.role === 'admin' ? 'Админ' : 'Респондент'}
                                         </span>
+                                    </td>
+                                    <td>
+                                        <span className="info-text">{u.department_name || '—'}</span>
+                                    </td>
+                                    <td>
+                                        <span className="info-text">{u.profession_name || '—'}</span>
                                     </td>
                                     <td>
                                         <span className="access-count">

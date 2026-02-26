@@ -6,12 +6,14 @@ import {
     LogOut,
     LayoutDashboard,
     ChevronLeft,
-    Menu
+    Menu,
+    BookOpen
 } from 'lucide-react';
 import Header from './Header.jsx';
 import UserManagement from './admin/UserManagement.jsx';
 import DataImport from './admin/DataImport.jsx';
 import SmtpSettings from './admin/SmtpSettings.jsx';
+import Dictionaries from './admin/Dictionaries.jsx';
 
 export default function AdminView({ user, onLogout }) {
     const [activeTab, setActiveTab] = useState('users');
@@ -19,6 +21,7 @@ export default function AdminView({ user, onLogout }) {
 
     const menuItems = [
         { id: 'users', label: 'Пользователи', icon: Users },
+        { id: 'dictionaries', label: 'Справочники', icon: BookOpen },
         { id: 'import', label: 'Импорт данных', icon: Database },
         { id: 'settings', label: 'Настройки', icon: Settings },
     ];
@@ -71,6 +74,13 @@ export default function AdminView({ user, onLogout }) {
                         <div className="admin-page">
                             <h1>Управление пользователями</h1>
                             <UserManagement />
+                        </div>
+                    )}
+
+                    {activeTab === 'dictionaries' && (
+                        <div className="admin-page">
+                            <h1>Справочники</h1>
+                            <Dictionaries />
                         </div>
                     )}
 

@@ -28,7 +28,9 @@ export async function clearDB() {
                 user_process_1_access,
                 process_1,
                 systems,
-                executors
+                executors,
+                departments,
+                professions
             CASCADE
         `);
     } finally {

@@ -1,15 +1,17 @@
 import bcrypt from 'bcryptjs';
 import pool from '../db/index.js';
 
-export async function createUser({ username, password, full_name, role, process_1_access }) {
+export async function createUser({ username, password, full_name, role, department_id, profession_id, process_1_access }) {
     const safeRole = role === 'admin' ? 'admin' : 'respondent';
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
         const passwordHash = await bcrypt.hash(password, 10);
         const { rows } = await client.query(
-            'INSERT INTO users (username, password_hash, full_name, role) VALUES ($1, $2, $3, $4) RETURNING id, username, full_name, role',
-            [username, passwordHash, full_name || null, safeRole]
+            `INSERT INTO users (username, password_hash, full_name, role, department_id, profession_id) 
+             VALUES ($1, $2, $3, $4, $5, $6) 
+             RETURNING id, username, full_name, role, department_id, profession_id`,
+            [username, passwordHash, full_name || null, safeRole, department_id || null, profession_id || null]
         );
         const user = rows[0];
 

@@ -9,9 +9,13 @@ export default function UserForm({ user, onClose, onSuccess }) {
         password: '',
         full_name: user?.full_name || '',
         role: user?.role || 'respondent',
+        department_id: user?.department_id || '',
+        profession_id: user?.profession_id || '',
         process_1_access: []
     });
     const [process1List, setProcess1List] = useState([]);
+    const [departmentsList, setDepartmentsList] = useState([]);
+    const [professionsList, setProfessionsList] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -21,8 +25,15 @@ export default function UserForm({ user, onClose, onSuccess }) {
 
     const loadData = async () => {
         try {
-            const res = await apiFetch('/api/admin/process-1');
-            setProcess1List(res.process_1 || []);
+            const [resP1, resDep, resProf] = await Promise.all([
+                apiFetch('/api/admin/process-1'),
+                apiFetch('/api/admin/departments'),
+                apiFetch('/api/admin/professions')
+            ]);
+
+            setProcess1List(resP1.process_1 || []);
+            setDepartmentsList(resDep.departments || []);
+            setProfessionsList(resProf.professions || []);
 
             if (isEdit) {
                 const accessRes = await apiFetch(`/api/admin/users/${user.id}/access`);
@@ -38,17 +49,34 @@ export default function UserForm({ user, onClose, onSuccess }) {
         setLoading(true);
         setError('');
         try {
-            const url = isEdit ? `/api/admin/users/${user.id}/access` : '/api/admin/users';
-            const method = 'POST';
+            if (isEdit) {
+                // Сначала обновим профиль
+                await apiFetch(`/api/admin/users/${user.id}/profile`, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        full_name: formData.full_name || null,
+                        department_id: formData.department_id ? Number(formData.department_id) : null,
+                        profession_id: formData.profession_id ? Number(formData.profession_id) : null
+                    })
+                });
 
-            // Если мы только редактируем доступ, бэкенд имеет другой эндпоинт для профиля и доступа
-            // Для упрощения сейчас реализуем только создание в этом компоненте, 
-            // или полное обновление если это респондент.
+                // Затем доступы
+                await apiFetch(`/api/admin/users/${user.id}/access`, {
+                    method: 'POST',
+                    body: JSON.stringify({ process_1_access: formData.process_1_access })
+                });
+            } else {
+                // Создание нового пользователя
+                await apiFetch('/api/admin/users', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        ...formData,
+                        department_id: formData.department_id ? Number(formData.department_id) : null,
+                        profession_id: formData.profession_id ? Number(formData.profession_id) : null
+                    })
+                });
+            }
 
-            await apiFetch(url, {
-                method,
-                body: JSON.stringify(formData)
-            });
             onSuccess();
         } catch (err) {
             setError(err.message);
@@ -107,11 +135,39 @@ export default function UserForm({ user, onClose, onSuccess }) {
                                     onChange={e => setFormData({ ...formData, full_name: e.target.value })}
                                 />
                             </label>
+
+                            <label>
+                                Подразделение
+                                <select
+                                    value={formData.department_id}
+                                    onChange={e => setFormData({ ...formData, department_id: e.target.value })}
+                                >
+                                    <option value="">-- Не выбрано --</option>
+                                    {departmentsList.filter(d => d.is_active || d.id === user?.department_id).map(d => (
+                                        <option key={d.id} value={d.id}>{d.name}</option>
+                                    ))}
+                                </select>
+                            </label>
+
+                            <label>
+                                Профессия
+                                <select
+                                    value={formData.profession_id}
+                                    onChange={e => setFormData({ ...formData, profession_id: e.target.value })}
+                                >
+                                    <option value="">-- Не выбрано --</option>
+                                    {professionsList.filter(p => p.is_active || p.id === user?.profession_id).map(p => (
+                                        <option key={p.id} value={p.id}>{p.name}</option>
+                                    ))}
+                                </select>
+                            </label>
+
                             <label>
                                 Роль
                                 <select
                                     value={formData.role}
                                     onChange={e => setFormData({ ...formData, role: e.target.value })}
+                                    disabled={isEdit} // Роль лучше менять отдельным бизнес-процессом
                                 >
                                     <option value="respondent">Респондент</option>
                                     <option value="admin">Администратор</option>

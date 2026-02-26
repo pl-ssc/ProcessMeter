@@ -12,6 +12,8 @@ import adminPlugin from './plugins/admin.js';
 
 import authRoutes from './routes/auth.js';
 import adminUsersRoutes from './routes/admin/users.js';
+import adminDepartmentsRoutes from './routes/admin/departments.js';
+import adminProfessionsRoutes from './routes/admin/professions.js';
 import adminProcessesRoutes from './routes/admin/processes.js';
 import adminImportRoutes from './routes/admin/import.js';
 import adminSettingsRoutes from './routes/admin/settings.js';
@@ -47,6 +49,8 @@ export async function buildApp(opts = {}) {
 
     app.register(authRoutes, { prefix: '/api/auth' });
     app.register(adminUsersRoutes, { prefix: '/api/admin/users' });
+    app.register(adminDepartmentsRoutes, { prefix: '/api/admin/departments' });
+    app.register(adminProfessionsRoutes, { prefix: '/api/admin/professions' });
     app.register(adminProcessesRoutes, { prefix: '/api/admin' });
     app.register(adminImportRoutes, { prefix: '/api/admin' });
     app.register(adminSettingsRoutes, { prefix: '/api/admin' });
