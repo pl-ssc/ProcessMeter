@@ -14,6 +14,7 @@ import authRoutes from './routes/auth.js';
 import adminUsersRoutes from './routes/admin/users.js';
 import adminProcessesRoutes from './routes/admin/processes.js';
 import adminImportRoutes from './routes/admin/import.js';
+import adminSettingsRoutes from './routes/admin/settings.js';
 import usersRoutes from './routes/users.js';
 import processesRoutes from './routes/processes.js';
 
@@ -42,6 +43,7 @@ app.register(authRoutes, { prefix: '/api/auth' });
 app.register(adminUsersRoutes, { prefix: '/api/admin/users' });
 app.register(adminProcessesRoutes, { prefix: '/api/admin' });
 app.register(adminImportRoutes, { prefix: '/api/admin' });
+app.register(adminSettingsRoutes, { prefix: '/api/admin' });
 app.register(usersRoutes, { prefix: '/api/users' });
 app.register(processesRoutes, { prefix: '/api' });
 

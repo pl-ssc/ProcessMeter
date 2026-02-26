@@ -9,20 +9,18 @@ import {
     Menu
 } from 'lucide-react';
 import Header from './Header.jsx';
-// Эти компоненты мы создадим на следующих этапах
 import UserManagement from './admin/UserManagement.jsx';
-// import AccessControl from './admin/AccessControl.jsx';
 import DataImport from './admin/DataImport.jsx';
+import SmtpSettings from './admin/SmtpSettings.jsx';
 
 export default function AdminView({ user, onLogout }) {
     const [activeTab, setActiveTab] = useState('users');
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
     const menuItems = [
-        // { id: 'dashboard', label: 'Дашборд', icon: LayoutDashboard },
         { id: 'users', label: 'Пользователи', icon: Users },
-        // { id: 'access', label: 'Доступы', icon: Database },
-        { id: 'import', label: 'Импорт данных', icon: Settings },
+        { id: 'import', label: 'Импорт данных', icon: Database },
+        { id: 'settings', label: 'Настройки', icon: Settings },
     ];
 
     return (
@@ -80,6 +78,13 @@ export default function AdminView({ user, onLogout }) {
                         <div className="admin-page">
                             <h1>Импорт и синхронизация</h1>
                             <DataImport />
+                        </div>
+                    )}
+
+                    {activeTab === 'settings' && (
+                        <div className="admin-page">
+                            <h1>Настройки приложения</h1>
+                            <SmtpSettings />
                         </div>
                     )}
                 </main>
