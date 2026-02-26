@@ -11,8 +11,12 @@ export default async function adminNocodbRoutes(fastify, options) {
 
     // Helper: получить ID базы
     async function getBaseId() {
+        if (!baseUrl || !token) {
+            throw new Error('NocoDB credentials (NOCODB_URL, NOCODB_API_TOKEN) are not configured on the server');
+        }
+
         const wsRes = await fetch(`${baseUrl}api/v1/workspaces`, { headers: authHeaders });
-        if (!wsRes.ok) throw new Error('Failed to fetch workspaces');
+        if (!wsRes.ok) throw new Error(`Failed to fetch workspaces, status: ${wsRes.status}`);
         const wsData = await wsRes.json();
         const workspaceId = wsData?.list?.[0]?.id;
 
@@ -41,7 +45,7 @@ export default async function adminNocodbRoutes(fastify, options) {
             return { users: data.users?.list || [] };
         } catch (err) {
             request.log.error(err);
-            return reply.code(500).send({ error: 'Failed to communicate with NocoDB' });
+            return reply.code(500).send({ error: `NocoDB Error: ${err.message || 'Unknown network error'}` });
         }
     });
 
@@ -82,7 +86,7 @@ export default async function adminNocodbRoutes(fastify, options) {
             }
         } catch (err) {
             request.log.error(err);
-            return reply.code(500).send({ error: 'Failed to communicate with NocoDB' });
+            return reply.code(500).send({ error: `NocoDB Error: ${err.message || 'Unknown network error'}` });
         }
     });
 }
