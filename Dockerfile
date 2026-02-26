@@ -16,4 +16,5 @@ ENV STATIC_DIR=/app/frontend/dist
 ENV PORT=3001
 
 EXPOSE 3001
-CMD ["node", "backend/src/server.js"]
+WORKDIR /app/backend
+CMD ["npm", "run", "start"]
