@@ -6,7 +6,6 @@ export default function UserForm({ user, onClose, onSuccess }) {
     const isEdit = !!user;
     const [formData, setFormData] = useState({
         username: user?.username || '',
-        password: '',
         full_name: user?.full_name || '',
         role: user?.role || 'respondent',
         department_id: user?.department_id || '',
@@ -67,10 +66,12 @@ export default function UserForm({ user, onClose, onSuccess }) {
                 });
             } else {
                 // Создание нового пользователя
+                const tempPassword = Math.random().toString(36).slice(-8) + 'X9!';
                 await apiFetch('/api/admin/users', {
                     method: 'POST',
                     body: JSON.stringify({
                         ...formData,
+                        password: tempPassword,
                         department_id: formData.department_id ? Number(formData.department_id) : null,
                         profession_id: formData.profession_id ? Number(formData.profession_id) : null
                     })
@@ -116,15 +117,6 @@ export default function UserForm({ user, onClose, onSuccess }) {
                                     disabled={isEdit}
                                     value={formData.username}
                                     onChange={e => setFormData({ ...formData, username: e.target.value })}
-                                />
-                            </label>
-                            <label>
-                                Пароль {isEdit && '(оставьте пустым, чтобы не менять)'}
-                                <input
-                                    type="password"
-                                    required={!isEdit}
-                                    value={formData.password}
-                                    onChange={e => setFormData({ ...formData, password: e.target.value })}
                                 />
                             </label>
                             <label>

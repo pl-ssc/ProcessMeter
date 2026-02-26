@@ -49,6 +49,10 @@ export default async function adminImportRoutes(fastify, options) {
                         values
                     );
                 }
+
+                if (columns.includes('id')) {
+                    await client.query(`SELECT setval(pg_get_serial_sequence('${table}', 'id'), COALESCE(MAX(id), 1)) FROM ${table}`);
+                }
             };
 
             await insertTable('process_1', ['id', 'f1_name', 'note', 'is_active', 'sort']);

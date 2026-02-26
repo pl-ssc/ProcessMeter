@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { apiFetch } from '../../api.js';
 import {
     UserPlus,
@@ -8,8 +8,10 @@ import {
     Key,
     Edit,
     Mail,
-    Loader2
+    Loader2,
+    Upload
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 import UserForm from './UserForm.jsx';
 
@@ -24,6 +26,8 @@ export default function UserManagement() {
     const [editingUser, setEditingUser] = useState(null);
     const [actionLoading, setActionLoading] = useState({}); // { [userId_type]: true }
     const [toast, setToast] = useState(null); // { type: 'success'|'error', msg }
+    const fileInputRef = useRef(null);
+    const [isImporting, setIsImporting] = useState(false);
 
     useEffect(() => {
         loadUsers();
@@ -77,6 +81,57 @@ export default function UserManagement() {
         }
     };
 
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setIsImporting(true);
+        try {
+            const buffer = await file.arrayBuffer();
+            const wb = XLSX.read(buffer, { type: 'array' });
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            const rawData = XLSX.utils.sheet_to_json(ws);
+
+            const usersPayload = rawData.map(row => {
+                const getVal = (keys) => {
+                    for (let k of keys) {
+                        if (row[k] !== undefined) return String(row[k]).trim();
+                    }
+                    return null;
+                };
+
+                const username = getVal(['Email', 'Почта', 'username', 'email']);
+                const full_name = getVal(['ФИО', 'Имя', 'Имя пользователя', 'full_name']);
+                const roleRaw = getVal(['Роль', 'role']);
+                const role = (roleRaw && roleRaw.toLowerCase() === 'администратор') ? 'admin' : 'respondent';
+                const department_name = getVal(['Подразделение', 'Отдел', 'department_name', 'department']);
+                const profession_name = getVal(['Профессия', 'Должность', 'profession_name', 'profession']);
+
+                return { username, full_name, role, department_name, profession_name };
+            }).filter(u => u.username);
+
+            if (usersPayload.length === 0) {
+                showToast('error', 'Не найдено пользователей с колонкой Email/Почта');
+                setIsImporting(false);
+                return;
+            }
+
+            const res = await apiFetch('/api/admin/users/bulk-import', {
+                method: 'POST',
+                body: JSON.stringify({ users: usersPayload })
+            });
+
+            showToast('success', `Импорт завершен! Добавлено: ${res.imported}, пропущено (дубли): ${res.skipped}`);
+            loadUsers();
+        } catch (err) {
+            console.error(err);
+            showToast('error', `Ошибка импорта: ${err.message}`);
+        } finally {
+            setIsImporting(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
     return (
         <div className="user-management">
             {toast && (
@@ -103,10 +158,27 @@ export default function UserManagement() {
                     </select>
                 </div>
 
-                <button className="primary" onClick={() => { setEditingUser(null); setShowForm(true); }}>
-                    <UserPlus size={18} />
-                    Добавить пользователя
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                        type="file"
+                        accept=".xlsx, .xls"
+                        ref={fileInputRef}
+                        style={{ display: 'none' }}
+                        onChange={handleFileUpload}
+                    />
+                    <button
+                        className="ghost"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isImporting}
+                    >
+                        {isImporting ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
+                        Импорт из Excel
+                    </button>
+                    <button className="primary" onClick={() => { setEditingUser(null); setShowForm(true); }}>
+                        <UserPlus size={18} />
+                        Добавить пользователя
+                    </button>
+                </div>
             </div>
 
             {loading ? (

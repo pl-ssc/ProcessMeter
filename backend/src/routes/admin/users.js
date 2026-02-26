@@ -230,6 +230,98 @@ export default async function adminUsersRoutes(fastify, options) {
         return { ok: true };
     });
 
+    // ── Bulk import users ────────────────────────────────────────────────────
+    fastify.post('/bulk-import', {
+        preHandler: [fastify.authenticate, fastify.requireAdminRole],
+        schema: {
+            body: {
+                type: 'object',
+                properties: {
+                    users: {
+                        type: 'array',
+                        items: {
+                            type: 'object',
+                            properties: {
+                                username: { type: 'string' },
+                                full_name: { type: ['string', 'null'] },
+                                role: { type: 'string', enum: ['admin', 'respondent'] },
+                                department_name: { type: ['string', 'null'] },
+                                profession_name: { type: ['string', 'null'] }
+                            },
+                            required: ['username']
+                        },
+                        minItems: 1
+                    }
+                },
+                required: ['users']
+            }
+        }
+    }, async (request, reply) => {
+        const { users } = request.body;
+        const client = await pool.connect();
+
+        try {
+            await client.query('BEGIN');
+
+            let importedCount = 0;
+            let skippedCount = 0;
+
+            for (const u of users) {
+                // Check if user exists
+                const { rows: existing } = await client.query('SELECT id FROM users WHERE username = $1', [u.username]);
+                if (existing.length > 0) {
+                    skippedCount++;
+                    continue; // Skip existing users for now
+                }
+
+                // Resolve dictionaries
+                let depId = null;
+                if (u.department_name) {
+                    const depRes = await client.query('SELECT id FROM departments WHERE name = $1', [u.department_name.trim()]);
+                    if (depRes.rows.length > 0) {
+                        depId = depRes.rows[0].id;
+                    } else {
+                        const newDep = await client.query('INSERT INTO departments (name) VALUES ($1) RETURNING id', [u.department_name.trim()]);
+                        depId = newDep.rows[0].id;
+                    }
+                }
+
+                let profId = null;
+                if (u.profession_name) {
+                    const profRes = await client.query('SELECT id FROM professions WHERE name = $1', [u.profession_name.trim()]);
+                    if (profRes.rows.length > 0) {
+                        profId = profRes.rows[0].id;
+                    } else {
+                        const newProf = await client.query('INSERT INTO professions (name) VALUES ($1) RETURNING id', [u.profession_name.trim()]);
+                        profId = newProf.rows[0].id;
+                    }
+                }
+
+                const safeRole = u.role === 'admin' ? 'admin' : 'respondent';
+                const tempPassword = Math.random().toString(36).slice(-10) + 'X9!';
+                const passwordHash = await bcrypt.hash(tempPassword, 10);
+
+                await client.query(
+                    `INSERT INTO users (username, password_hash, full_name, role, department_id, profession_id)
+                     VALUES ($1, $2, $3, $4, $5, $6)`,
+                    [u.username.trim(), passwordHash, u.full_name || null, safeRole, depId, profId]
+                );
+
+                importedCount++;
+            }
+
+            await client.query('COMMIT');
+            return { imported: importedCount, skipped: skippedCount };
+
+        } catch (err) {
+            await client.query('ROLLBACK');
+            request.log.error(err);
+            return reply.code(500).send({ error: 'Bulk import failed: ' + err.message });
+        } finally {
+            client.release();
+        }
+    });
+
     // ── Send invitation or password-reset email ──────────────────────────────
     // Unified handler: POST /:id/send-invite  and  POST /:id/send-reset
     async function sendEmailHandler(type, request, reply) {

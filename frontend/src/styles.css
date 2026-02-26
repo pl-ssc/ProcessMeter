@@ -120,6 +120,9 @@ select {
   background: var(--bg-panel);
   color: var(--text-main);
   transition: all 0.2s;
+  height: 2.5rem;
+  /* Фиксированная высота для выравнивания */
+  appearance: auto;
 }
 
 input:focus,
@@ -934,6 +937,7 @@ button.primary:hover {
 .info-card li {
   margin-bottom: var(--space-1);
 }
+
 /* ================================
    Settings Page
    ================================ */
@@ -1016,12 +1020,27 @@ button.primary:hover {
   font-weight: 500;
   z-index: 1000;
   animation: fadeInUp 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
-.toast-message.success { background: #10b981; color: #fff; }
-.toast-message.error   { background: #ef4444; color: #fff; }
+
+.toast-message.success {
+  background: #10b981;
+  color: #fff;
+}
+
+.toast-message.error {
+  background: #ef4444;
+  color: #fff;
+}
 
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
