@@ -48,9 +48,24 @@ export default function RespondentView({ user, onLogout }) {
                 apiFetch('/api/processes'),
             ]);
             setSystems(sys.systems || []);
-            setProcesses(proc.process_3 || []);
-            if (proc.process_3 && proc.process_3.length > 0) {
-                setSelectedF3Index(String(proc.process_3[0].process_3_id));
+
+            const processList = proc.process_3 || [];
+            setProcesses(processList);
+
+            if (processList.length > 0) {
+                const savedF3 = localStorage.getItem('pm_selected_f3');
+                if (savedF3 && processList.some(p => String(p.process_3_id) === savedF3)) {
+                    setSelectedF3Index(savedF3);
+                } else {
+                    try {
+                        const sortedP1 = Array.from(new Set(processList.map(p => p.f1_name))).sort((a, b) => a.localeCompare(b));
+                        const topP1Name = sortedP1[0];
+                        const firstF3 = processList.find(p => p.f1_name === topP1Name);
+                        setSelectedF3Index(String(firstF3 ? firstF3.process_3_id : processList[0].process_3_id));
+                    } catch (e) {
+                        setSelectedF3Index(String(processList[0].process_3_id));
+                    }
+                }
             }
         };
         loadMeta();
@@ -126,6 +141,12 @@ export default function RespondentView({ user, onLogout }) {
     useEffect(() => {
         dirtyMapRef.current = dirtyMap;
     }, [dirtyMap]);
+
+    useEffect(() => {
+        if (selectedF3Index) {
+            localStorage.setItem('pm_selected_f3', selectedF3Index);
+        }
+    }, [selectedF3Index]);
 
     const handleSelectF3 = useCallback((f3Index) => {
         if (dirtyMapRef.current.size > 0) {
