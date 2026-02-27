@@ -4,6 +4,8 @@ import LoginPage from './components/LoginPage.jsx';
 import RespondentView from './components/RespondentView.jsx';
 import AdminView from './components/AdminView.jsx';
 import SetPasswordPage from './components/SetPasswordPage.jsx';
+import DashboardView from './components/DashboardView.jsx';
+import Header from './components/Header.jsx';
 import { AppSkeleton } from './components/Skeleton.jsx';
 
 /** Reads ?action=set-password&token=... from the URL */
@@ -20,6 +22,11 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [loginError, setLoginError] = useState('');
   const [setPasswordToken, setSetPasswordToken] = useState(getSetPasswordToken);
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    document.body.classList.toggle('dark-theme', isDark);
+  }, [isDark]);
 
   useEffect(() => {
     const boot = async () => {
@@ -83,8 +90,26 @@ export default function App() {
   }
 
   if (user.role === 'admin') {
-    return <AdminView user={user} onLogout={handleLogout} />;
+    return <AdminView user={user} onLogout={handleLogout} isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} />;
   }
 
-  return <RespondentView user={user} onLogout={handleLogout} />;
+  if (user.role === 'auditor') {
+    return (
+      <div className="app">
+        <Header
+          user={user}
+          onLogout={handleLogout}
+          onSubmit={() => { }}
+          hasChanges={false}
+          isDark={isDark}
+          onToggleTheme={() => setIsDark(!isDark)}
+        />
+        <main className="main-content">
+          <DashboardView user={user} />
+        </main>
+      </div>
+    );
+  }
+
+  return <RespondentView user={user} onLogout={handleLogout} isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} />;
 }

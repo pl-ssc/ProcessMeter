@@ -163,6 +163,7 @@ export default function UserForm({ user, onClose, onSuccess }) {
                                 >
                                     <option value="respondent">Респондент</option>
                                     <option value="admin">Администратор</option>
+                                    <option value="auditor">Аудитор</option>
                                 </select>
                             </label>
                         </div>

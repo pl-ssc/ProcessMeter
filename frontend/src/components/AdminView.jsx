@@ -15,23 +15,16 @@ import DataImport from './admin/DataImport.jsx';
 import SmtpSettings from './admin/SmtpSettings.jsx';
 import Dictionaries from './admin/Dictionaries.jsx';
 import NocodbUsers from './admin/NocodbUsers.jsx';
+import DashboardView from './DashboardView.jsx';
 
-export default function AdminView({ user, onLogout }) {
+export default function AdminView({ user, onLogout, isDark, onToggleTheme }) {
     const [activeTab, setActiveTab] = useState('users');
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-    const [isDark, setIsDark] = useState(false);
-
-    const toggleTheme = useCallback(() => {
-        setIsDark(prev => !prev);
-    }, []);
-
-    useEffect(() => {
-        document.body.classList.toggle('dark-theme', isDark);
-    }, [isDark]);
 
     const menuItems = [
         { id: 'users', label: 'Пользователи', icon: Users },
         { id: 'dictionaries', label: 'Справочники', icon: BookOpen },
+        { id: 'dashboards', label: 'Аналитика', icon: LayoutDashboard },
         { id: 'settings', label: 'Настройки', icon: Settings },
         { type: 'divider' },
         { id: 'import', label: 'Импорт данных', icon: Database },
@@ -47,7 +40,7 @@ export default function AdminView({ user, onLogout }) {
                 onSubmit={() => { }}
                 hasChanges={false}
                 isDark={isDark}
-                onToggleTheme={toggleTheme}
+                onToggleTheme={onToggleTheme}
             />
 
             <div className="admin-layout">
@@ -107,6 +100,13 @@ export default function AdminView({ user, onLogout }) {
                         <div className="admin-page">
                             <h1>Справочники</h1>
                             <Dictionaries />
+                        </div>
+                    )}
+
+                    {activeTab === 'dashboards' && (
+                        <div className="admin-page">
+                            <h1>Аналитика и дашборды</h1>
+                            <DashboardView user={user} />
                         </div>
                     )}
 

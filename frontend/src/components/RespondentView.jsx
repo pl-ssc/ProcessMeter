@@ -6,7 +6,7 @@ import InfoPanel from './InfoPanel.jsx';
 import ProcessTree from './ProcessTree.jsx';
 import AnswerGrid from './AnswerGrid.jsx';
 
-export default function RespondentView({ user, onLogout }) {
+export default function RespondentView({ user, onLogout, isDark, onToggleTheme }) {
     const [systems, setSystems] = useState([]);
     const [processes, setProcesses] = useState([]);
     const [selectedF3Index, setSelectedF3Index] = useState('');
@@ -17,16 +17,7 @@ export default function RespondentView({ user, onLogout }) {
         return saved ? Number(saved) : window.innerWidth * 0.25;
     });
     const [isResizing, setIsResizing] = useState(false);
-    const [isDark, setIsDark] = useState(false);
     const [stats, setStats] = useState({ total_hours: 0, fte: 0, status: 'not_started' });
-
-    const toggleTheme = useCallback(() => {
-        setIsDark(prev => !prev);
-    }, []);
-
-    useEffect(() => {
-        document.body.classList.toggle('dark-theme', isDark);
-    }, [isDark]);
 
     useEffect(() => {
         localStorage.setItem('pm_sidebar_width', sidebarWidth.toString());
@@ -201,7 +192,7 @@ export default function RespondentView({ user, onLogout }) {
                 autoSaveStatus={autoSaveStatus}
                 hasChanges={dirtyMap.size > 0}
                 isDark={isDark}
-                onToggleTheme={toggleTheme}
+                onToggleTheme={onToggleTheme}
             />
             <InfoPanel
                 stats={stats}

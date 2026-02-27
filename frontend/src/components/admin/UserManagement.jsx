@@ -154,6 +154,7 @@ export default function UserManagement() {
                     <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
                         <option value="all">Все роли</option>
                         <option value="admin">Администраторы</option>
+                        <option value="auditor">Аудиторы</option>
                         <option value="respondent">Респонденты</option>
                     </select>
                 </div>
@@ -228,7 +229,7 @@ export default function UserManagement() {
                                     </td>
                                     <td>
                                         <span className={`badge ${u.role}`}>
-                                            {u.role === 'admin' ? 'Админ' : 'Респондент'}
+                                            {u.role === 'admin' ? 'Админ' : u.role === 'auditor' ? 'Аудитор' : 'Респондент'}
                                         </span>
                                     </td>
                                     <td>

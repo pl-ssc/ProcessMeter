@@ -20,6 +20,7 @@ import adminSettingsRoutes from './routes/admin/settings.js';
 import adminNocodbRoutes from './routes/admin/nocodb.js';
 import usersRoutes from './routes/users.js';
 import processesRoutes from './routes/processes.js';
+import dashboardRoutes from './routes/dashboards.js';
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
@@ -58,6 +59,7 @@ export async function buildApp(opts = {}) {
     app.register(adminNocodbRoutes, { prefix: '/api/admin/nocodb' });
     app.register(usersRoutes, { prefix: '/api/users' });
     app.register(processesRoutes, { prefix: '/api' });
+    app.register(dashboardRoutes, { prefix: '/api/dashboards' });
 
     if (fs.existsSync(env.STATIC_DIR)) {
         await app.register(fastifyStatic, {

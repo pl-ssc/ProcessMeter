@@ -24,6 +24,8 @@ export const env = {
     ORG_NAME: process.env.ORG_NAME || 'ProcessMeter',
     NOCODB_URL: process.env.NOCODB_URL,
     NOCODB_API_TOKEN: process.env.NOCODB_API_TOKEN,
+    METABASE_SECRET_KEY: process.env.METABASE_SECRET_KEY,
+    METABASE_SITE_URL: process.env.METABASE_SITE_URL,
 };
 
 // Fail fast in production if critical secrets are not set
