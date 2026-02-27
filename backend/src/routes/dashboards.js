@@ -14,6 +14,7 @@ export default async function dashboardRoutes(fastify, options) {
         const METABASE_SECRET_KEY = env.METABASE_SECRET_KEY;
 
         if (!METABASE_SECRET_KEY) {
+            request.log.error('METABASE_SECRET_KEY is missing in env');
             return reply.code(500).send({ error: 'Metabase secret key not configured' });
         }
 

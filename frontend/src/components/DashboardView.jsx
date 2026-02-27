@@ -28,7 +28,7 @@ export default function DashboardView({ user }) {
                     document.body.appendChild(script);
                 }
             } catch (err) {
-                setError('Не удалось загрузить данные дашборда');
+                setError(`Не удалось загрузить данные дашборда: ${err.message}`);
                 console.error(err);
             } finally {
                 setLoading(false);
