@@ -127,11 +127,11 @@ export default function RespondentView({ user, onLogout }) {
         if (dirtyMap.size > 0) {
             await handleSave();
         }
-        if (!window.confirm('Отправить изменения?')) return;
+        if (!window.confirm('После завершения ввода данных таблица будет заблокирована для ввода. Вы уверены?')) return;
         try {
             await apiFetch('/api/answers/complete', { method: 'POST' });
             loadStats(); // Update stats after submit
-            window.alert('Изменения отправлены');
+            window.alert('Ввод данных завершен');
         } catch (err) {
             window.alert(`Ошибка: ${err.message}`);
         }

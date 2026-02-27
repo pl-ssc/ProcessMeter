@@ -85,7 +85,7 @@ export default function InfoPanel({ stats, onSubmit, hasChanges, isDark }) {
             <button
                 className="primary"
                 onClick={onSubmit}
-                disabled={status === 'completed' && !hasChanges}
+                disabled={(status === 'completed' && !hasChanges) || Number(total_hours) === 0}
                 style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -95,7 +95,7 @@ export default function InfoPanel({ stats, onSubmit, hasChanges, isDark }) {
                 }}
             >
                 <Send size={16} />
-                {status === 'completed' ? 'Отправлено' : 'Отправить'}
+                {status === 'completed' ? 'Завершено' : 'Завершить ввод данных'}
             </button>
 
             {showHelp && (
@@ -136,7 +136,7 @@ export default function InfoPanel({ stats, onSubmit, hasChanges, isDark }) {
                             <br />
                             3. В примечании кратко опишите допущения, редкие случаи или важные детали.
                             <br />
-                            4. Когда все строки заполнены, нажмите «Отправить».
+                            4. Когда все строки заполнены, нажмите «Завершить ввод данных».
                         </div>
                         <div style={{ marginTop: 14, textAlign: 'right' }}>
                             <button
