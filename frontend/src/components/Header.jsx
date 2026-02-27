@@ -21,8 +21,8 @@ export default function Header({ user, onLogout, autoSaveStatus, onSubmit, hasCh
                         style={{
                             height: '64px',
                             width: 'auto',
-                            mixBlendMode: isDark ? 'lighten' : 'normal',
-                            marginLeft: '-10px' // Сдвиг влево, чтобы компенсировать внутренние поля логотипа
+                            marginLeft: '-10px', // Сдвиг влево, чтобы компенсировать внутренние поля логотипа
+                            display: 'block'
                         }}
                     />
                 </div>
