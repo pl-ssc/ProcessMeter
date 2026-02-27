@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     Users,
     Settings,
@@ -19,12 +19,22 @@ import NocodbUsers from './admin/NocodbUsers.jsx';
 export default function AdminView({ user, onLogout }) {
     const [activeTab, setActiveTab] = useState('users');
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [isDark, setIsDark] = useState(false);
+
+    const toggleTheme = useCallback(() => {
+        setIsDark(prev => !prev);
+    }, []);
+
+    useEffect(() => {
+        document.body.classList.toggle('dark-theme', isDark);
+    }, [isDark]);
 
     const menuItems = [
         { id: 'users', label: 'Пользователи', icon: Users },
         { id: 'dictionaries', label: 'Справочники', icon: BookOpen },
-        { id: 'import', label: 'Импорт данных', icon: Database },
         { id: 'settings', label: 'Настройки', icon: Settings },
+        { type: 'divider' },
+        { id: 'import', label: 'Импорт данных', icon: Database },
         { id: 'nocodb', label: 'Эталонная база', icon: Database }
     ];
 
@@ -36,8 +46,8 @@ export default function AdminView({ user, onLogout }) {
                 // В админке некоторые функции хедера могут быть неактивны
                 onSubmit={() => { }}
                 hasChanges={false}
-                isDark={false} // Пока без темной темы для админки
-                onToggleTheme={() => { }}
+                isDark={isDark}
+                onToggleTheme={toggleTheme}
             />
 
             <div className="admin-layout">
@@ -50,16 +60,30 @@ export default function AdminView({ user, onLogout }) {
                     </div>
 
                     <nav className="sidebar-nav">
-                        {menuItems.map(item => (
-                            <button
-                                key={item.id}
-                                className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
-                                onClick={() => setActiveTab(item.id)}
-                            >
-                                <item.icon size={20} />
-                                {isSidebarOpen && <span>{item.label}</span>}
-                            </button>
-                        ))}
+                        {menuItems.map((item, index) => {
+                            if (item.type === 'divider') {
+                                return (
+                                    <div
+                                        key={`divider-${index}`}
+                                        style={{
+                                            height: '1px',
+                                            backgroundColor: 'rgba(128, 128, 128, 0.2)',
+                                            margin: '8px 16px'
+                                        }}
+                                    />
+                                );
+                            }
+                            return (
+                                <button
+                                    key={item.id}
+                                    className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
+                                    onClick={() => setActiveTab(item.id)}
+                                >
+                                    <item.icon size={20} />
+                                    {isSidebarOpen && <span>{item.label}</span>}
+                                </button>
+                            );
+                        })}
                     </nav>
 
                     <div className="sidebar-footer">

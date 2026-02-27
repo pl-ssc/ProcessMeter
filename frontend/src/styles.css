@@ -1044,3 +1044,64 @@ button.primary:hover {
     transform: translateY(0);
   }
 }
+
+/* ================================
+   NocoDB Integration Styles
+   ================================ */
+
+.badge.editor {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.badge.commenter {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.nocodb-link {
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--text-main);
+  border: 1px solid var(--border);
+  transition: all 0.2s;
+}
+
+.nocodb-link:hover {
+  background: var(--bg-app);
+}
+
+.nocodb-error-banner {
+  margin-bottom: var(--space-4);
+  padding: var(--space-4);
+  background: #fee2e2;
+  color: #b91c1c;
+  border-radius: var(--radius-sm);
+  border: 1px solid #f87171;
+}
+
+.nocodb-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.nocodb-empty-icon {
+  color: var(--border);
+}
+
+.nocodb-success-banner {
+  margin-bottom: var(--space-4);
+  padding: var(--space-4);
+  background: #d1fae5;
+  color: #065f46;
+  border-radius: var(--radius-sm);
+  border: 1px solid #34d399;
+}

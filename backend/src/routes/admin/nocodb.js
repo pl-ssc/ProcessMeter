@@ -1,52 +1,15 @@
-import { env } from '../../config/env.js';
+import { nocodbClient } from '../../services/nocodb.js';
 
 export default async function adminNocodbRoutes(fastify, options) {
-    let baseUrl = env.NOCODB_URL || '';
-    if (baseUrl && !baseUrl.endsWith('/')) {
-        baseUrl += '/';
-    }
-    const token = env.NOCODB_API_TOKEN;
-    const authHeaders = {
-        'xc-token': token,
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-    };
-
-    // Helper: получить ID базы
-    async function getBaseId() {
-        if (!baseUrl || !token) {
-            throw new Error('NocoDB credentials (NOCODB_URL, NOCODB_API_TOKEN) are not configured on the server');
-        }
-
-        const baseRes = await fetch(`${baseUrl}api/v1/db/meta/projects`, { headers: authHeaders });
-        if (!baseRes.ok) {
-            const errorText = await baseRes.text();
-            request.log?.error('NocoDB Error (fetch projects): ' + errorText);
-            throw new Error(`Failed to fetch NocoDB projects, status: ${baseRes.status}`);
-        }
-
-        const bases = await baseRes.json();
-        const baseId = bases?.list?.[0]?.id;
-
-        if (!baseId) throw new Error('No bases found in NocoDB');
-
-        return baseId;
-    }
-
     fastify.get('/users', { preHandler: [fastify.authenticate, fastify.requireAdminRole] }, async (request, reply) => {
         try {
-            const baseId = await getBaseId();
-            const usersRes = await fetch(`${baseUrl}api/v2/meta/bases/${baseId}/users`, { headers: authHeaders });
-
-            if (!usersRes.ok) {
-                return reply.code(usersRes.status).send({ error: 'Failed to fetch NocoDB users' });
-            }
-
-            const data = await usersRes.json();
-            return { users: data.users?.list || [] };
+            const users = await nocodbClient.getUsers(request.log);
+            return { users };
         } catch (err) {
             request.log.error(err);
-            return reply.code(500).send({ error: `NocoDB Error: ${err.message || 'Unknown network error'}` });
+            return reply.code(err.message.includes('NocoDB credentials') ? 500 : (err.status || 500)).send({
+                error: `NocoDB Error: ${err.message || 'Unknown network error'}`
+            });
         }
     });
 
@@ -64,30 +27,14 @@ export default async function adminNocodbRoutes(fastify, options) {
         }
     }, async (request, reply) => {
         try {
-            const baseId = await getBaseId();
             const { email, roles } = request.body;
-
-            const inviteRes = await fetch(`${baseUrl}api/v2/meta/bases/${baseId}/users`, {
-                method: 'POST',
-                headers: authHeaders,
-                body: JSON.stringify({ email, roles })
-            });
-
-            if (!inviteRes.ok) {
-                const errorText = await inviteRes.text();
-                request.log.error('NocoDB Invite Error: ' + errorText);
-                return reply.code(inviteRes.status).send({ error: 'Failed to invite user to NocoDB' });
-            }
-
-            try {
-                const data = await inviteRes.json();
-                return data;
-            } catch (e) {
-                return { msg: 'User invited successfully' };
-            }
+            const data = await nocodbClient.inviteUser(email, roles, request.log);
+            return data;
         } catch (err) {
             request.log.error(err);
-            return reply.code(500).send({ error: `NocoDB Error: ${err.message || 'Unknown network error'}` });
+            return reply.code(err.message.includes('NocoDB credentials') ? 500 : (err.status || 500)).send({
+                error: `NocoDB Error: ${err.message || 'Unknown network error'}`
+            });
         }
     });
 }

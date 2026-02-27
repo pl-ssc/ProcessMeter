@@ -12,6 +12,7 @@ export default function NocodbUsers() {
     const [email, setEmail] = useState('');
     const [role, setRole] = useState('editor');
     const [inviting, setInviting] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
 
     const loadUsers = async () => {
         try {
@@ -32,8 +33,21 @@ export default function NocodbUsers() {
 
     const handleInvite = async (e) => {
         e.preventDefault();
+        setError('');
+        setSuccessMessage('');
         try {
             setInviting(true);
+
+            // Optimistic UI: add user temporarily
+            const tempUser = {
+                id: 'temp-' + Date.now(),
+                email: email,
+                roles: role,
+                invite_token: 'pending',
+                created_at: new Date().toISOString()
+            };
+            setUsers(prev => [...prev, tempUser]);
+
             await apiFetch('/api/admin/nocodb/users', {
                 method: 'POST',
                 body: JSON.stringify({ email, roles: role })
@@ -41,10 +55,16 @@ export default function NocodbUsers() {
             setShowInviteModal(false);
             setEmail('');
             setRole('editor');
+            setSuccessMessage(`Приглашение успешно отправлено на ${tempUser.email}`);
+
+            // Reload to get real data (id etc)
             await loadUsers();
-            alert('Приглашение успешно отправлено');
+
+            // Clear success message after 5 seconds
+            setTimeout(() => setSuccessMessage(''), 5000);
         } catch (err) {
-            alert('Ошибка при приглашении: ' + err.message);
+            setUsers(prev => prev.filter(u => u.id !== tempUser.id)); // Rollback optimistic update
+            setError('Ошибка при приглашении: ' + err.message);
         } finally {
             setInviting(false);
         }
@@ -57,8 +77,8 @@ export default function NocodbUsers() {
                 <ShieldAlert size={12} /> Admin
             </span>;
         }
-        if (rolesString.includes('editor')) return <span className="badge respondent" style={{ backgroundColor: '#e0f2fe', color: '#0369a1' }}>Editor</span>;
-        if (rolesString.includes('commenter')) return <span className="badge" style={{ backgroundColor: '#fef3c7', color: '#b45309' }}>Commenter</span>;
+        if (rolesString.includes('editor')) return <span className="badge editor">Editor</span>;
+        if (rolesString.includes('commenter')) return <span className="badge commenter">Commenter</span>;
         return <span className="badge respondent">Viewer</span>;
     };
 
@@ -73,24 +93,15 @@ export default function NocodbUsers() {
                         href="https://plnsi.processlabs.ru/"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="ghost"
-                        style={{
-                            textDecoration: 'none',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '0.5rem 1rem',
-                            borderRadius: '0.375rem',
-                            fontWeight: 500,
-                            fontSize: '0.875rem',
-                            color: 'var(--text-main)',
-                            border: '1px solid var(--border-color)'
-                        }}
+                        className="nocodb-link ghost"
                     >
                         <Database size={18} />
                         Перейти в редактор
                     </a>
-                    <button className="primary" onClick={() => setShowInviteModal(true)}>
+                    <button className="primary" onClick={() => {
+                        setShowInviteModal(true);
+                        setError(''); // Clear errors when opening modal
+                    }}>
                         <UserPlus size={18} />
                         Пригласить эксперта
                     </button>
@@ -98,8 +109,14 @@ export default function NocodbUsers() {
             </div>
 
             {error && (
-                <div className="error-banner" style={{ marginBottom: '1rem', padding: '1rem', background: '#fee2e2', color: '#b91c1c', borderRadius: '0.375rem', border: '1px solid #f87171' }}>
+                <div className="nocodb-error-banner">
                     {error}
+                </div>
+            )}
+
+            {successMessage && (
+                <div className="nocodb-success-banner">
+                    {successMessage}
                 </div>
             )}
 
@@ -121,8 +138,8 @@ export default function NocodbUsers() {
                                 <tr key={u.id}>
                                     <td>
                                         <div className="user-cell">
-                                            <div className="user-avatar" style={{ background: 'var(--accent-color)', color: 'white' }}>
-                                                {u.display_name ? u.display_name.charAt(0).toUpperCase() : u.email.charAt(0).toUpperCase()}
+                                            <div className="user-avatar" style={{ background: 'var(--accent)', color: 'white' }}>
+                                                {(u.display_name?.charAt(0) || u.email?.charAt(0) || '?').toUpperCase()}
                                             </div>
                                             <div className="user-details">
                                                 <span className="user-name">{u.display_name || 'Без имени'}</span>
@@ -135,7 +152,7 @@ export default function NocodbUsers() {
                                     </td>
                                     <td>
                                         {u.invite_token ? (
-                                            <span className="info-text" style={{ color: '#f59e0b' }}>Приглашен (ожидает)</span>
+                                            <span className="info-text" style={{ color: '#f59e0b' }}>Приглашен</span>
                                         ) : (
                                             <span className="info-text" style={{ color: '#10b981' }}>Активен</span>
                                         )}
@@ -150,8 +167,8 @@ export default function NocodbUsers() {
                             {users.length === 0 && (
                                 <tr>
                                     <td colSpan="4" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-                                            <Database size={32} style={{ color: 'var(--border-color)' }} />
+                                        <div className="nocodb-empty-state">
+                                            <Database size={32} className="nocodb-empty-icon" />
                                             <span>Список экспертов пуст</span>
                                         </div>
                                     </td>
