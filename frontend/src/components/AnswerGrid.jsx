@@ -246,6 +246,8 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark,
                 onColumnResize={onColumnResize}
                 headerIcons={headerIcons}
                 onMouseMove={onMouseMove}
+                getRowThemeOverride={(row) => ({ allowWrap: true })}
+                rowHeight={48}
             />
             {tooltip.visible && (
                 <div
