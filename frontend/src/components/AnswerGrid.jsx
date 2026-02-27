@@ -76,7 +76,7 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark,
 
         switch (col) {
             case 0:
-                return { kind: GridCellKind.Text, data: item.f4_name || '', displayData: item.f4_name || '', themeOverride, readonly: true, allowWrap: true };
+                return { kind: GridCellKind.Text, data: item.f4_name || '', displayData: item.f4_name || '', themeOverride, readonly: true, allowWrapping: true };
             case 1:
                 return {
                     kind: GridCellKind.Number,
@@ -173,14 +173,6 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark,
     }, [columns, HEADER_ICON_PAD, HEADER_ICON_SIZE]);
 
     const onMouseMove = useCallback((args) => {
-        // Toggle col-resize cursor when hovering near column edges in the header area
-        if (args.kind === 'header') {
-            const isNearEdge = args.isGhost || (args.bounds.x + args.bounds.width - args.localEventX < 8);
-            document.body.style.cursor = isNearEdge ? 'col-resize' : '';
-        } else {
-            document.body.style.cursor = '';
-        }
-
         if (args.kind !== 'header') {
             setTooltip((prev) => (prev.visible ? { ...prev, visible: false } : prev));
             return;
@@ -246,7 +238,6 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark,
                 onColumnResize={onColumnResize}
                 headerIcons={headerIcons}
                 onMouseMove={onMouseMove}
-                getRowThemeOverride={(row) => ({ allowWrap: true })}
                 rowHeight={48}
             />
             {tooltip.visible && (
