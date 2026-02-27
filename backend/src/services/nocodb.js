@@ -1,18 +1,16 @@
 import { env } from '../config/env.js';
 
 class NocoDBClient {
-    constructor() {
-        this.baseUrl = env.NOCODB_URL || '';
+    constructor(baseUrl, token) {
+        this.baseUrl = baseUrl || '';
         if (this.baseUrl && !this.baseUrl.endsWith('/')) {
             this.baseUrl += '/';
         }
-        this.token = env.NOCODB_API_TOKEN;
 
+        this.token = token ? token.trim() : '';
         this.baseIdCache = null;
-    }
 
-    get authHeaders() {
-        return {
+        this.authHeaders = {
             'xc-token': this.token,
             'Accept': 'application/json',
             'Content-Type': 'application/json'
@@ -32,62 +30,73 @@ class NocoDBClient {
         if (!baseRes.ok) {
             const errorText = await baseRes.text();
             if (logger) logger.error('NocoDB Error (fetch projects): ' + errorText);
-            throw new Error(`Failed to fetch NocoDB projects, status: ${baseRes.status}`);
+
+            const err = new Error(`Failed to fetch NocoDB projects, status: ${baseRes.status}`);
+            err.status = baseRes.status;
+            throw err;
         }
 
         const bases = await baseRes.json();
         const baseId = bases?.list?.[0]?.id;
 
-        if (!baseId) throw new Error('No bases found in NocoDB');
+        if (!baseId) {
+            const err = new Error('No bases found in NocoDB');
+            err.status = 404;
+            throw err;
+        }
 
         this.baseIdCache = baseId;
         return baseId;
     }
 
     async getUsers(logger) {
-        try {
-            const baseId = await this.getBaseId(logger);
-            const usersRes = await fetch(`${this.baseUrl}api/v2/meta/bases/${baseId}/users`, { headers: this.authHeaders });
+        const baseId = await this.getBaseId(logger);
+        const usersRes = await fetch(`${this.baseUrl}api/v2/meta/bases/${baseId}/users`, { headers: this.authHeaders });
 
-            if (!usersRes.ok) {
-                if (logger) logger.error(`Failed to fetch NocoDB users, status: ${usersRes.status}`);
-                throw new Error('Failed to fetch NocoDB users');
+        if (!usersRes.ok) {
+            if (usersRes.status === 404) {
+                this.baseIdCache = null; // Invalidate cache if base is deleted/recreated
             }
+            if (logger) logger.error(`Failed to fetch NocoDB users, status: ${usersRes.status}`);
 
-            const data = await usersRes.json();
-            return data.users?.list || [];
-        } catch (err) {
+            const err = new Error('Failed to fetch NocoDB users');
+            err.status = usersRes.status;
             throw err;
         }
+
+        const data = await usersRes.json();
+        return data.users?.list || [];
     }
 
     async inviteUser(email, roles, logger) {
-        try {
-            const baseId = await this.getBaseId(logger);
+        const baseId = await this.getBaseId(logger);
 
-            const inviteRes = await fetch(`${this.baseUrl}api/v2/meta/bases/${baseId}/users`, {
-                method: 'POST',
-                headers: this.authHeaders,
-                body: JSON.stringify({ email, roles })
-            });
+        const inviteRes = await fetch(`${this.baseUrl}api/v2/meta/bases/${baseId}/users`, {
+            method: 'POST',
+            headers: this.authHeaders,
+            body: JSON.stringify({ email, roles })
+        });
 
-            if (!inviteRes.ok) {
-                const errorText = await inviteRes.text();
-                if (logger) logger.error('NocoDB Invite Error: ' + errorText);
-                throw new Error('Failed to invite user to NocoDB');
+        if (!inviteRes.ok) {
+            if (inviteRes.status === 404) {
+                this.baseIdCache = null; // Invalidate cache
             }
+            const errorText = await inviteRes.text();
+            if (logger) logger.error('NocoDB Invite Error: ' + errorText);
 
-            const contentType = inviteRes.headers.get('content-type');
-            if (contentType && contentType.includes('application/json')) {
-                return await inviteRes.json();
-            }
-
-            return { msg: 'User invited successfully' };
-        } catch (err) {
+            const err = new Error('Failed to invite user to NocoDB');
+            err.status = inviteRes.status;
             throw err;
         }
+
+        const contentType = inviteRes.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            return await inviteRes.json();
+        }
+
+        return { msg: 'User invited successfully' };
     }
 }
 
-// Export a singleton instance
-export const nocodbClient = new NocoDBClient();
+// Export a singleton instance using env injection
+export const nocodbClient = new NocoDBClient(env.NOCODB_URL, env.NOCODB_API_TOKEN);

@@ -1,8 +1,13 @@
-import 'dotenv/config';
+import { env } from './src/config/env.js';
 
 async function testAdmin() {
-    const url = process.env.NOCODB_URL;
-    const token = process.env.NOCODB_API_TOKEN;
+    const url = env.NOCODB_URL;
+    const token = env.NOCODB_API_TOKEN;
+
+    if (!url || !token) {
+        console.error('Error: NOCODB_URL or NOCODB_API_TOKEN is missing in environment or env.js!');
+        return;
+    }
 
     const authHeaders = {
         'xc-token': token,
@@ -16,7 +21,7 @@ async function testAdmin() {
         const usersRes = await fetch(`${url}api/v1/db/meta/users`, { headers: authHeaders });
         console.log('Endpoint /api/v1/db/meta/users response:', usersRes.status);
         if (usersRes.ok) console.log(await usersRes.json());
-    } catch (e) {}
+    } catch (e) { }
 
     try {
         console.log('\nFetching users via project/base endpoint...');
@@ -24,7 +29,7 @@ async function testAdmin() {
         const baseRes = await fetch(`${url}api/v1/db/meta/projects`, { headers: authHeaders });
         const bases = await baseRes.json();
         console.log('Bases:', bases?.list?.map(b => b.id) || 'None');
-        
+
         if (bases && bases.list && bases.list.length > 0) {
             const baseId = bases.list[0].id;
             const usersBaseRes = await fetch(`${url}api/v1/db/meta/projects/${baseId}/users`, { headers: authHeaders });

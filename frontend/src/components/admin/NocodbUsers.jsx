@@ -14,16 +14,16 @@ export default function NocodbUsers() {
     const [inviting, setInviting] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
 
-    const loadUsers = async () => {
+    const loadUsers = async ({ silent } = {}) => {
         try {
-            setLoading(true);
+            if (!silent) setLoading(true);
             const data = await apiFetch('/api/admin/nocodb/users');
             setUsers(data.users || []);
             setError('');
         } catch (err) {
             setError(err.message || 'Ошибка загрузки пользователей эталонной базы');
         } finally {
-            setLoading(false);
+            if (!silent) setLoading(false);
         }
     };
 
@@ -58,7 +58,7 @@ export default function NocodbUsers() {
             setSuccessMessage(`Приглашение успешно отправлено на ${tempUser.email}`);
 
             // Reload to get real data (id etc)
-            await loadUsers();
+            await loadUsers({ silent: true });
 
             // Clear success message after 5 seconds
             setTimeout(() => setSuccessMessage(''), 5000);
