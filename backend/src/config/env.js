@@ -5,8 +5,16 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config(); // local (backend folder)
-dotenv.config({ path: path.join(__dirname, '../../../.env') }); // root folder
+const localEnv = dotenv.config();
+const rootEnvPath = path.join(__dirname, '../../../.env');
+const rootEnv = dotenv.config({ path: rootEnvPath });
+
+if (process.env.DEBUG_ENV) {
+    console.log('[ENV] Local .env result:', localEnv.error ? 'Not found/error' : 'Loaded');
+    console.log('[ENV] Root .env path:', rootEnvPath);
+    console.log('[ENV] Root .env result:', rootEnv.error ? 'Not found/error' : 'Loaded');
+    console.log('[ENV] METABASE_SECRET_KEY present:', !!process.env.METABASE_SECRET_KEY);
+}
 
 const JWT_SECRET_DEFAULT = 'dev-secret-change-me';
 
