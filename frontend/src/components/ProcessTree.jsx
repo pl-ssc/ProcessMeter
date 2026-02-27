@@ -196,11 +196,43 @@ const ProcessTree = React.memo(function ProcessTree({ processes, selectedF3Index
                         </button>
                     )}
                 </div>
-                <button className="icon-btn" onClick={handleExpandAll} title="Развернуть все" style={{ padding: '6px' }}>
-                    <ChevronsDown size={16} />
+                <button
+                    className="icon-btn"
+                    onClick={handleExpandAll}
+                    title="Развернуть все"
+                    style={{
+                        padding: '6px 12px',
+                        background: 'var(--bg-panel)',
+                        color: 'var(--text-main)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius-md)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontFamily: 'inherit'
+                    }}
+                >
+                    <ChevronsDown size={14} />
+                    <span style={{ fontSize: '0.75rem', marginLeft: '4px', fontFamily: 'inherit' }}>Развернуть всё</span>
                 </button>
-                <button className="icon-btn" onClick={handleCollapseAll} title="Свернуть все" style={{ padding: '6px' }}>
-                    <ChevronsUp size={16} />
+                <button
+                    className="icon-btn"
+                    onClick={handleCollapseAll}
+                    title="Свернуть все"
+                    style={{
+                        padding: '6px 12px',
+                        background: 'var(--bg-panel)',
+                        color: 'var(--text-main)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius-md)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontFamily: 'inherit'
+                    }}
+                >
+                    <ChevronsUp size={14} />
+                    <span style={{ fontSize: '0.75rem', marginLeft: '4px', fontFamily: 'inherit' }}>Свернуть всё</span>
                 </button>
             </div>
 
