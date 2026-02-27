@@ -8,7 +8,7 @@ const defaultColumns = [
     { id: 'f4_name', title: 'Операция', width: 400, icon: 'info' },
     { id: 'labor_hours', title: 'Трудозатраты', width: 180, icon: 'info' },
     { id: 'system_id', title: 'ИТ-система', width: 220, icon: 'info' },
-    { id: 'note', title: 'Примечание', width: 320, icon: 'info' },
+    { id: 'note', title: '', width: 60, icon: 'info' },
 ];
 
 export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark, isSubmitted, selectedProcess }) {
@@ -21,7 +21,7 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark,
         f4_name: 'Название операции, которую вы выполняете.',
         labor_hours: 'Примерные трудозатраты по операции в месяц в человеко-часах.',
         system_id: 'ИТ-система, которая используется для выполнения операции.',
-        note: 'Краткие пояснения: допущения, нюансы, исключения.',
+        note: 'Примечание к операции.',
     }), []);
 
     const headerIcons = useMemo(() => ({
@@ -102,19 +102,44 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark,
                     readonly: isSubmitted,
                 };
             }
-            case 3:
+            case 3: {
+                const hasNote = !!(item.note && item.note.trim() !== '');
+                const noteColor = isDark ? '#38bdf8' : '#0ea5e9';
                 return {
                     kind: GridCellKind.Text,
                     data: item.note || '',
-                    displayData: item.note || '',
-                    themeOverride,
-                    readonly: isSubmitted,
-                    allowOverlay: !isSubmitted
+                    displayData: hasNote ? '📝' : '➕',
+                    themeOverride: hasNote ? { ...themeOverride, textDark: noteColor, textMedium: noteColor } : themeOverride,
+                    readonly: true,
+                    allowOverlay: false,
+                    contentAlign: 'center'
                 };
+            }
             default:
                 return { kind: GridCellKind.Text, data: '', displayData: '', readonly: true };
         }
     }, [answers, systemsById, systemOptions, dirtyMap, isDark, isSubmitted]);
+
+    const [editingNote, setEditingNote] = useState(null);
+
+    const onCellClicked = useCallback((gridCell) => {
+        const [col, row] = gridCell;
+        if (col === 3 && !isSubmitted) {
+            const item = answers[row];
+            if (item) {
+                setEditingNote({ rowIndex: row, text: item.note || '' });
+            }
+        }
+    }, [answers, isSubmitted]);
+
+    const onSaveNote = () => {
+        if (!editingNote) return;
+        const item = answers[editingNote.rowIndex];
+        if (item) {
+            onEdit({ ...item, note: editingNote.text });
+        }
+        setEditingNote(null);
+    };
 
     const onCellEdited = React.useCallback((cell, newValue) => {
         if (isSubmitted) return;
@@ -122,7 +147,7 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark,
         const item = answers[row];
         if (!item) return;
 
-        if (![1, 2, 3].includes(col)) return;
+        if (![1, 2].includes(col)) return;
 
         const next = { ...item };
 
@@ -132,8 +157,8 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark,
                 val = Number(newValue.data);
             }
 
-            if (val !== null && (Number.isNaN(val) || val < 0 || val > 240)) {
-                window.alert('Трудозатраты должны быть числом от 0 до 240');
+            if (val !== null && (Number.isNaN(val) || val < 0)) {
+                window.alert('Трудозатраты должны быть числом от 0');
                 return;
             }
             next.labor_hours = val;
@@ -151,10 +176,6 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark,
                 }
                 next.system_id = id;
             }
-        }
-
-        if (col === 3 && newValue.kind === GridCellKind.Text) {
-            next.note = newValue.data || '';
         }
 
         onEdit(next);
@@ -269,7 +290,74 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark,
                     headerIcons={headerIcons}
                     onMouseMove={onMouseMove}
                     rowHeight={48}
+                    onCellClicked={onCellClicked}
                 />
+                {editingNote && (
+                    <div style={{
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgba(15, 23, 42, 0.5)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 100
+                    }} onClick={() => setEditingNote(null)}>
+                        <div style={{
+                            width: 'min(450px, 90vw)',
+                            background: isDark ? '#1e293b' : '#ffffff',
+                            color: isDark ? '#f8fafc' : '#0f172a',
+                            borderRadius: 12,
+                            padding: '20px',
+                            border: `1px solid ${isDark ? '#334155' : '#e2e8f0'}`,
+                            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+                        }} onClick={e => e.stopPropagation()}>
+                            <div style={{ marginBottom: 12, fontWeight: 600 }}>Примечание к операции</div>
+                            <textarea
+                                autoFocus
+                                value={editingNote.text}
+                                onChange={e => setEditingNote({ ...editingNote, text: e.target.value })}
+                                style={{
+                                    width: '100%',
+                                    minHeight: 120,
+                                    padding: '10px',
+                                    borderRadius: 8,
+                                    border: `1px solid ${isDark ? '#475569' : '#cbd5e1'}`,
+                                    background: isDark ? '#0f172a' : '#ffffff',
+                                    color: 'inherit',
+                                    fontSize: 14,
+                                    outline: 'none',
+                                    resize: 'vertical'
+                                }}
+                                placeholder="Введите примечание..."
+                            />
+                            <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                                <button
+                                    onClick={() => setEditingNote(null)}
+                                    style={{
+                                        padding: '6px 14px',
+                                        borderRadius: 6,
+                                        border: `1px solid ${isDark ? '#475569' : '#e2e8f0'}`,
+                                        background: 'transparent',
+                                        color: isDark ? '#94a3b8' : '#64748b',
+                                        cursor: 'pointer'
+                                    }}
+                                >Отмена</button>
+                                <button
+                                    onClick={onSaveNote}
+                                    style={{
+                                        padding: '6px 14px',
+                                        borderRadius: 6,
+                                        border: 'none',
+                                        background: '#10b981',
+                                        color: '#ffffff',
+                                        fontWeight: 500,
+                                        cursor: 'pointer'
+                                    }}
+                                >Сохранить</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 {tooltip.visible && (
                     <div
                         style={{
