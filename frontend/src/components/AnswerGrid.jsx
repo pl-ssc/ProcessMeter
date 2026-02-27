@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { DataEditor, GridCellKind } from '@glideapps/glide-data-grid';
 import { DropdownCell } from '@glideapps/glide-data-grid-cells';
+import { ChevronRight } from 'lucide-react';
 import "@glideapps/glide-data-grid/dist/index.css";
 
 const defaultColumns = [
@@ -10,7 +11,7 @@ const defaultColumns = [
     { id: 'note', title: 'Примечание', width: 320, icon: 'info' },
 ];
 
-export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark, isSubmitted }) {
+export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark, isSubmitted, selectedProcess }) {
     const [columns, setColumns] = useState(defaultColumns);
     const [tooltip, setTooltip] = useState({ visible: false, text: '', x: 0, y: 0 });
     const HEADER_ICON_SIZE = 18;
@@ -222,48 +223,78 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark,
 
     return (
         <div className="grid-wrap" style={{ position: 'relative' }}>
-            <DataEditor
-                columns={columns}
-                getCellContent={getCellContent}
-                rows={answers.length}
-                width="100%"
-                onCellEdited={onCellEdited}
-                rowMarkers="none"
-                smoothScrollX
-                smoothScrollY
-                height="100%"
-                stickyColumns={1}
-                customRenderers={customRenderers}
-                theme={gridTheme}
-                onColumnResize={onColumnResize}
-                headerIcons={headerIcons}
-                onMouseMove={onMouseMove}
-                rowHeight={48}
-            />
-            {tooltip.visible && (
+            {selectedProcess && (
                 <div
+                    className="breadcrumbs"
                     style={{
-                        position: 'absolute',
-                        left: tooltip.x + 12,
-                        top: tooltip.y + 16,
-                        maxWidth: 260,
-                        padding: '8px 10px',
-                        background: isDark ? '#0f172a' : '#ffffff',
-                        color: isDark ? '#e2e8f0' : '#0f172a',
-                        border: `1px solid ${isDark ? '#334155' : '#e2e8f0'}`,
-                        borderRadius: 8,
-                        fontSize: 12,
-                        lineHeight: 1.3,
-                        boxShadow: isDark
-                            ? '0 8px 16px rgba(0, 0, 0, 0.4)'
-                            : '0 8px 16px rgba(15, 23, 42, 0.12)',
-                        pointerEvents: 'none',
-                        zIndex: 5,
+                        padding: '12px 16px',
+                        borderBottom: '1px solid var(--border)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontSize: '0.8125rem',
+                        color: 'var(--text-muted)',
+                        background: 'var(--bg-panel)',
+                        flexShrink: 0
                     }}
                 >
-                    {tooltip.text}
+                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={selectedProcess.f1_name}>
+                        {selectedProcess.f1_name}
+                    </span>
+                    <ChevronRight size={14} style={{ flexShrink: 0, opacity: 0.5 }} />
+                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={selectedProcess.f2_name}>
+                        {selectedProcess.f2_name}
+                    </span>
+                    <ChevronRight size={14} style={{ flexShrink: 0, opacity: 0.5 }} />
+                    <span style={{ fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={selectedProcess.f3_name}>
+                        {selectedProcess.f3_name}
+                    </span>
                 </div>
             )}
+            <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
+                <DataEditor
+                    columns={columns}
+                    getCellContent={getCellContent}
+                    rows={answers.length}
+                    width="100%"
+                    onCellEdited={onCellEdited}
+                    rowMarkers="none"
+                    smoothScrollX
+                    smoothScrollY
+                    height="100%"
+                    stickyColumns={1}
+                    customRenderers={customRenderers}
+                    theme={gridTheme}
+                    onColumnResize={onColumnResize}
+                    headerIcons={headerIcons}
+                    onMouseMove={onMouseMove}
+                    rowHeight={48}
+                />
+                {tooltip.visible && (
+                    <div
+                        style={{
+                            position: 'absolute',
+                            left: tooltip.x + 12,
+                            top: tooltip.y + 16,
+                            maxWidth: 260,
+                            padding: '8px 10px',
+                            background: isDark ? '#0f172a' : '#ffffff',
+                            color: isDark ? '#e2e8f0' : '#0f172a',
+                            border: `1px solid ${isDark ? '#334155' : '#e2e8f0'}`,
+                            borderRadius: 8,
+                            fontSize: 12,
+                            lineHeight: 1.3,
+                            boxShadow: isDark
+                                ? '0 8px 16px rgba(0, 0, 0, 0.4)'
+                                : '0 8px 16px rgba(15, 23, 42, 0.12)',
+                            pointerEvents: 'none',
+                            zIndex: 5,
+                        }}
+                    >
+                        {tooltip.text}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

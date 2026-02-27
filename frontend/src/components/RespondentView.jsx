@@ -188,6 +188,11 @@ export default function RespondentView({ user, onLogout }) {
         };
     }, [isResizing, resize, stopResizing]);
 
+    const selectedProcess = useMemo(() => {
+        if (!selectedF3Index || !processes) return null;
+        return processes.find(p => String(p.process_3_id) === String(selectedF3Index));
+    }, [processes, selectedF3Index]);
+
     return (
         <div className="app">
             <Header
@@ -221,6 +226,7 @@ export default function RespondentView({ user, onLogout }) {
                     dirtyMap={dirtyMap}
                     isDark={isDark}
                     isSubmitted={stats.status === 'completed'}
+                    selectedProcess={selectedProcess}
                 />
             </div>
         </div>
