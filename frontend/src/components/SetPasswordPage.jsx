@@ -60,7 +60,7 @@ export default function SetPasswordPage({ token, onDone }) {
             <div className="login-page">
                 <div className="login-card">
                     <div style={{ textAlign: 'center' }}>
-                        <AlertTriangle size={40} style={{ color: '#ef4444', margin: '0 auto 1rem' }} />
+                        <AlertTriangle size={40} style={{ color: '#fa5252', margin: '0 auto 1rem' }} />
                         <h2>Ссылка недействительна</h2>
                         <p style={{ color: 'var(--text-muted)', margin: '0.5rem 0 1.5rem' }}>
                             {info.error || 'Срок действия ссылки истёк или она уже была использована.'}
@@ -77,7 +77,7 @@ export default function SetPasswordPage({ token, onDone }) {
             <div className="login-page">
                 <div className="login-card">
                     <div style={{ textAlign: 'center' }}>
-                        <CheckCircle2 size={40} style={{ color: '#10b981', margin: '0 auto 1rem' }} />
+                        <CheckCircle2 size={40} style={{ color: 'var(--accent-highlight)', margin: '0 auto 1rem' }} />
                         <h2>Пароль установлен!</h2>
                         <p style={{ color: 'var(--text-muted)', margin: '0.5rem 0 1.5rem' }}>
                             Теперь вы можете войти в систему.

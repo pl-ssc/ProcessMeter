@@ -235,7 +235,7 @@ const ProcessTree = React.memo(function ProcessTree({ processes, selectedF3Index
                                         <span className="tree-label" style={{ fontWeight: 500, whiteSpace: 'normal', lineHeight: 1.2 }}>
                                             {highlightText(res.f3_name, searchQuery)}
                                         </span>
-                                        {res.has_data && <FileText size={12} className="data-icon" style={{ marginLeft: 'auto', flexShrink: 0, color: '#10b981' }} />}
+                                        {res.has_data && <FileText size={12} className="data-icon" style={{ marginLeft: 'auto', flexShrink: 0, color: 'var(--accent-highlight)' }} />}
                                     </div>
                                 </div>
                             ))
@@ -253,7 +253,7 @@ const ProcessTree = React.memo(function ProcessTree({ processes, selectedF3Index
                                     {expanded.has(p1.process_1_id) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                                 </span>
                                 <span className="tree-label">{p1.f1_name}</span>
-                                {p1.has_data && <FileText size={12} className="data-icon" style={{ marginLeft: 'auto', color: '#10b981' }} />}
+                                {p1.has_data && <FileText size={12} className="data-icon" style={{ marginLeft: 'auto', color: 'var(--accent-highlight)' }} />}
                             </div>
                             {expanded.has(p1.process_1_id) && (
                                 <div className="tree-children">
@@ -268,7 +268,7 @@ const ProcessTree = React.memo(function ProcessTree({ processes, selectedF3Index
                                                     {expanded.has(p2.process_2_id) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                                                 </span>
                                                 <span className="tree-label">{p2.f2_name}</span>
-                                                {p2.has_data && <FileText size={12} className="data-icon" style={{ marginLeft: 'auto', color: '#10b981' }} />}
+                                                {p2.has_data && <FileText size={12} className="data-icon" style={{ marginLeft: 'auto', color: 'var(--accent-highlight)' }} />}
                                             </div>
                                             {expanded.has(p2.process_2_id) && (
                                                 <div className="tree-children">
@@ -280,7 +280,7 @@ const ProcessTree = React.memo(function ProcessTree({ processes, selectedF3Index
                                                             title={p3.f3_name}
                                                         >
                                                             <span className="tree-label">{p3.f3_name}</span>
-                                                            {p3.has_data && <FileText size={12} className="data-icon" style={{ marginLeft: 'auto', color: '#10b981' }} />}
+                                                            {p3.has_data && <FileText size={12} className="data-icon" style={{ marginLeft: 'auto', color: 'var(--accent-highlight)' }} />}
                                                         </div>
                                                     ))}
                                                 </div>
