@@ -14,16 +14,16 @@ export default function Header({ user, onLogout, autoSaveStatus, onSubmit, hasCh
     return (
         <header className="topbar">
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <div style={{ width: '140px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                <div style={{ width: '180px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', overflow: 'hidden' }}>
                     <img
                         src={isDark ? '/logo-dark.png' : '/logo-light.png'}
                         alt="ProcessLabs"
                         style={{
-                            height: '56px',
+                            height: '64px',
                             width: 'auto',
-                            mixBlendMode: isDark ? 'normal' : 'multiply',
-                            transform: 'scale(1.4)',
-                            transformOrigin: 'left center'
+                            mixBlendMode: isDark ? 'lighten' : 'multiply',
+                            filter: isDark ? 'contrast(1.1)' : 'contrast(1.1) brightness(1.05)',
+                            marginLeft: '-10px' // Сдвиг влево, чтобы компенсировать внутренние поля логотипа
                         }}
                     />
                 </div>
