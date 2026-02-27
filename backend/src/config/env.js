@@ -18,22 +18,27 @@ if (process.env.DEBUG_ENV) {
 
 const JWT_SECRET_DEFAULT = 'dev-secret-change-me';
 
+const getEnv = (key, defaultValue = '') => {
+    const value = process.env[key];
+    return (value && value.trim() !== '') ? value : defaultValue;
+};
+
 export const env = {
-    PORT: Number(process.env.PORT || 3001),
-    HOST: process.env.HOST || '0.0.0.0',
-    TARGET_DATABASE_URL: process.env.TARGET_DATABASE_URL,
-    JWT_SECRET: process.env.JWT_SECRET || JWT_SECRET_DEFAULT,
-    ADMIN_API_KEY: process.env.ADMIN_API_KEY || 'dev-admin-key',
-    ADMIN_USERNAME: process.env.ADMIN_USERNAME || '',
-    ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || '',
-    ADMIN_FULL_NAME: process.env.ADMIN_FULL_NAME || '',
-    STATIC_DIR: process.env.STATIC_DIR || path.join(__dirname, '../../../frontend/dist'),
-    APP_URL: process.env.APP_URL || 'http://localhost:3001',
-    ORG_NAME: process.env.ORG_NAME || 'ProcessMeter',
-    NOCODB_URL: process.env.NOCODB_URL,
-    NOCODB_API_TOKEN: process.env.NOCODB_API_TOKEN,
-    METABASE_SECRET_KEY: process.env.METABASE_SECRET_KEY,
-    METABASE_SITE_URL: process.env.METABASE_SITE_URL,
+    PORT: Number(getEnv('PORT', '3001')),
+    HOST: getEnv('HOST', '0.0.0.0'),
+    TARGET_DATABASE_URL: getEnv('TARGET_DATABASE_URL'),
+    JWT_SECRET: getEnv('JWT_SECRET', JWT_SECRET_DEFAULT),
+    ADMIN_API_KEY: getEnv('ADMIN_API_KEY', 'dev-admin-key'),
+    ADMIN_USERNAME: getEnv('ADMIN_USERNAME'),
+    ADMIN_PASSWORD: getEnv('ADMIN_PASSWORD'),
+    ADMIN_FULL_NAME: getEnv('ADMIN_FULL_NAME'),
+    STATIC_DIR: getEnv('STATIC_DIR', path.join(__dirname, '../../../frontend/dist')),
+    APP_URL: getEnv('APP_URL', 'http://localhost:3001'),
+    ORG_NAME: getEnv('ORG_NAME', 'ProcessMeter'),
+    NOCODB_URL: getEnv('NOCODB_URL'),
+    NOCODB_API_TOKEN: getEnv('NOCODB_API_TOKEN'),
+    METABASE_SECRET_KEY: getEnv('METABASE_SECRET_KEY'),
+    METABASE_SITE_URL: getEnv('METABASE_SITE_URL'),
 };
 
 // Fail fast in production if critical secrets are not set
