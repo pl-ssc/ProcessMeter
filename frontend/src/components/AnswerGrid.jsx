@@ -1,21 +1,23 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState, useRef, useEffect } from 'react';
 import { DataEditor, GridCellKind } from '@glideapps/glide-data-grid';
 import { DropdownCell } from '@glideapps/glide-data-grid-cells';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, MessageSquare, Plus } from 'lucide-react';
 import "@glideapps/glide-data-grid/dist/index.css";
 
 const defaultColumns = [
     { id: 'f4_name', title: 'Операция', width: 400, icon: 'info' },
     { id: 'labor_hours', title: 'Трудозатраты', width: 180, icon: 'info' },
     { id: 'system_id', title: 'ИТ-система', width: 220, icon: 'info' },
-    { id: 'note', title: '', width: 60, icon: 'info' },
 ];
 
 export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark, isSubmitted, selectedProcess }) {
     const [columns, setColumns] = useState(defaultColumns);
     const [tooltip, setTooltip] = useState({ visible: false, text: '', x: 0, y: 0 });
+    const gridRef = useRef(null);
+    const [scrollTop, setScrollTop] = useState(0);
     const HEADER_ICON_SIZE = 18;
     const HEADER_ICON_PAD = 8;
+    const ROW_HEIGHT = 48;
 
     const headerTooltips = useMemo(() => ({
         f4_name: 'Название операции, которую вы выполняете.',
@@ -71,7 +73,6 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark,
             (item.system_id !== null && item.system_id !== undefined) ||
             (item.note && item.note.trim() !== '');
 
-        // Use theme-aware accent colors for dirty or filled rows
         const dirtyColor = isDark ? '#064e3b' : '#ecfdf5';
         const themeOverride = (isDirty || hasData) ? { bgCell: dirtyColor } : undefined;
 
@@ -102,35 +103,12 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark,
                     readonly: isSubmitted,
                 };
             }
-            case 3: {
-                const hasNote = !!(item.note && item.note.trim() !== '');
-                const noteColor = isDark ? '#38bdf8' : '#0ea5e9';
-                return {
-                    kind: GridCellKind.Text,
-                    data: item.note || '',
-                    displayData: hasNote ? '📝' : '➕',
-                    themeOverride: hasNote ? { ...themeOverride, textDark: noteColor, textMedium: noteColor } : themeOverride,
-                    readonly: true,
-                    allowOverlay: false,
-                    contentAlign: 'center'
-                };
-            }
             default:
                 return { kind: GridCellKind.Text, data: '', displayData: '', readonly: true };
         }
     }, [answers, systemsById, systemOptions, dirtyMap, isDark, isSubmitted]);
 
     const [editingNote, setEditingNote] = useState(null);
-
-    const onCellClicked = useCallback((gridCell) => {
-        const [col, row] = gridCell;
-        if (col === 3 && !isSubmitted) {
-            const item = answers[row];
-            if (item) {
-                setEditingNote({ rowIndex: row, text: item.note || '' });
-            }
-        }
-    }, [answers, isSubmitted]);
 
     const onSaveNote = () => {
         if (!editingNote) return;
@@ -210,6 +188,10 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark,
         setTooltip({ visible: true, text, x: args.localEventX, y: args.localEventY });
     }, [columns, headerTooltips, isOverHeaderIcon]);
 
+    const onScroll = useCallback((args) => {
+        setScrollTop(args.y);
+    }, []);
+
     if (!answers || answers.length === 0) {
         return <div className="grid-placeholder">Загрузка данных...</div>;
     }
@@ -224,7 +206,7 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark,
         borderColor: "#334155",
         bgCell: "#0f172a",
         fgIconHeader: "#38bdf8",
-        bgIconHeader: "#0f172a",
+        bgIconHeader: "#1e293b",
         headerIconSize: HEADER_ICON_SIZE,
         cellHorizontalPadding: HEADER_ICON_PAD,
         fontFamily: "Inter, sans-serif",
@@ -243,7 +225,7 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark,
     };
 
     return (
-        <div className="grid-wrap" style={{ position: 'relative' }}>
+        <div className="grid-wrap" style={{ position: 'relative', display: 'flex', flexDirection: 'column' }}>
             {selectedProcess && (
                 <div
                     className="breadcrumbs"
@@ -272,26 +254,93 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark,
                     </span>
                 </div>
             )}
-            <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
-                <DataEditor
-                    columns={columns}
-                    getCellContent={getCellContent}
-                    rows={answers.length}
-                    width="100%"
-                    onCellEdited={onCellEdited}
-                    rowMarkers="none"
-                    smoothScrollX
-                    smoothScrollY
-                    height="100%"
-                    stickyColumns={1}
-                    customRenderers={customRenderers}
-                    theme={gridTheme}
-                    onColumnResize={onColumnResize}
-                    headerIcons={headerIcons}
-                    onMouseMove={onMouseMove}
-                    rowHeight={48}
-                    onCellClicked={onCellClicked}
-                />
+            <div style={{ flex: 1, position: 'relative', minHeight: 0, display: 'flex' }}>
+                <div style={{ flex: 1, position: 'relative' }}>
+                    <DataEditor
+                        ref={gridRef}
+                        columns={columns}
+                        getCellContent={getCellContent}
+                        rows={answers.length}
+                        width="100%"
+                        onCellEdited={onCellEdited}
+                        rowMarkers="none"
+                        smoothScrollX
+                        smoothScrollY
+                        height="100%"
+                        stickyColumns={1}
+                        customRenderers={customRenderers}
+                        theme={gridTheme}
+                        onColumnResize={onColumnResize}
+                        headerIcons={headerIcons}
+                        onMouseMove={onMouseMove}
+                        rowHeight={ROW_HEIGHT}
+                        onScroll={onScroll}
+                    />
+                </div>
+
+                <div className="action-column" style={{
+                    width: 50,
+                    flexShrink: 0,
+                    borderLeft: `1px solid ${gridTheme.borderColor}`,
+                    background: gridTheme.bgHeader,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'hidden'
+                }}>
+                    <div style={{
+                        height: ROW_HEIGHT - 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderBottom: `1px solid ${gridTheme.borderColor}`,
+                        color: gridTheme.fgIconHeader,
+                        cursor: 'help'
+                    }}
+                        onMouseEnter={(e) => {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const gridRect = e.currentTarget.closest('.grid-wrap').getBoundingClientRect();
+                            setTooltip({
+                                visible: true,
+                                text: headerTooltips.note,
+                                x: rect.left - gridRect.left - 100,
+                                y: rect.top - gridRect.top + 30
+                            });
+                        }}
+                        onMouseLeave={() => setTooltip(prev => ({ ...prev, visible: false }))}
+                    >
+                        <MessageSquare size={18} />
+                    </div>
+                    <div style={{
+                        flex: 1,
+                        position: 'relative',
+                        marginTop: -scrollTop,
+                        background: gridTheme.bgCell
+                    }}>
+                        {answers.map((item, idx) => {
+                            const hasNote = !!(item.note && item.note.trim() !== '');
+                            const color = hasNote ? (isDark ? '#38bdf8' : '#0ea5e9') : (isDark ? '#475569' : '#94a3b8');
+                            return (
+                                <div
+                                    key={item.operation_id}
+                                    onClick={() => !isSubmitted && setEditingNote({ rowIndex: idx, text: item.note || '' })}
+                                    style={{
+                                        height: ROW_HEIGHT,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: isSubmitted ? 'default' : 'pointer',
+                                        borderBottom: `1px solid ${gridTheme.borderColor}`,
+                                        color: color,
+                                        transition: 'color 0.2s'
+                                    }}
+                                >
+                                    {hasNote ? <MessageSquare size={18} /> : <Plus size={18} />}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
                 {editingNote && (
                     <div style={{
                         position: 'fixed',
