@@ -22,7 +22,7 @@ export default function Header({ user, onLogout, autoSaveStatus, onSubmit, hasCh
                 <div style={{ height: '28px', width: '1px', background: 'var(--border)' }} />
                 <div>
                     <div className="title" style={{ fontSize: '1rem' }}>{ORG_NAME}</div>
-                    <div className="subtitle" style={{ fontSize: '0.7rem' }}>Планирование трудоемкости операций</div>
+                    <div className="subtitle" style={{ fontSize: '0.7rem' }}>Анализ трудоемкости операций</div>
                 </div>
             </div>
 
