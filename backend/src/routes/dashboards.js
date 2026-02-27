@@ -21,6 +21,7 @@ export default async function dashboardRoutes(fastify, options) {
         const payload = {
             resource: { dashboard: 2 },
             params: {},
+            iat: Math.round(Date.now() / 1000) - 60, // 1 minute in the past for safety
             exp: Math.round(Date.now() / 1000) + (10 * 60) // 10 minute expiration
         };
 
