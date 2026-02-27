@@ -16,12 +16,12 @@ export default function Header({ user, onLogout, autoSaveStatus, onSubmit, hasCh
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                 <div style={{ width: '220px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', overflow: 'hidden' }}>
                     <img
-                        src={isDark ? '/logo-dark.png' : '/logo-light.png'}
+                        src={isDark ? '/logo-dark.png' : '/logo-light-transparent.png'}
                         alt="ProcessLabs"
                         style={{
                             height: '64px',
                             width: 'auto',
-                            mixBlendMode: isDark ? 'lighten' : 'multiply',
+                            mixBlendMode: isDark ? 'lighten' : 'normal',
                             marginLeft: '-10px' // Сдвиг влево, чтобы компенсировать внутренние поля логотипа
                         }}
                     />
