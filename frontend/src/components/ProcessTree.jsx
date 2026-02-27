@@ -68,7 +68,7 @@ const ProcessTree = React.memo(function ProcessTree({ processes, selectedF3Index
 
                 // Разворачиваем все процессы 1 уровня (чтобы были видны процессы 2 уровня)
                 tree.forEach(p1 => {
-                    initial.add(String(p1.process_1_id));
+                    initial.add(`p1-${p1.process_1_id}`);
                 });
 
                 // Разворачиваем самый верхний процесс 2 уровня
@@ -76,7 +76,7 @@ const ProcessTree = React.memo(function ProcessTree({ processes, selectedF3Index
                 if (topP1 && topP1.children.size > 0) {
                     const topP2 = Array.from(topP1.children.values())[0];
                     if (topP2) {
-                        initial.add(String(topP2.process_2_id));
+                        initial.add(`p2-${topP2.process_2_id}`);
                     }
                 }
 
@@ -91,8 +91,8 @@ const ProcessTree = React.memo(function ProcessTree({ processes, selectedF3Index
             const selectedProcess = processes.find(p => String(p.process_3_id) === String(selectedF3Index));
             if (selectedProcess) {
                 setExpanded(prev => {
-                    const p1Id = String(selectedProcess.process_1_id);
-                    const p2Id = String(selectedProcess.process_2_id);
+                    const p1Id = `p1-${selectedProcess.process_1_id}`;
+                    const p2Id = `p2-${selectedProcess.process_2_id}`;
                     if (!prev.has(p1Id) || !prev.has(p2Id)) {
                         const next = new Set(prev);
                         next.add(p1Id);
@@ -108,9 +108,9 @@ const ProcessTree = React.memo(function ProcessTree({ processes, selectedF3Index
     const handleExpandAll = () => {
         const all = new Set();
         tree.forEach(p1 => {
-            all.add(String(p1.process_1_id));
+            all.add(`p1-${p1.process_1_id}`);
             Array.from(p1.children.values()).forEach(p2 => {
-                all.add(String(p2.process_2_id));
+                all.add(`p2-${p2.process_2_id}`);
             });
         });
         setExpanded(all);
@@ -274,31 +274,31 @@ const ProcessTree = React.memo(function ProcessTree({ processes, selectedF3Index
                         <div key={p1.process_1_id} className="tree-level-1">
                             <div
                                 className="tree-node tree-node-1"
-                                onClick={() => toggleExpand(p1.process_1_id)}
+                                onClick={() => toggleExpand(`p1-${p1.process_1_id}`)}
                                 title={p1.f1_name}
                             >
                                 <span className="tree-icon">
-                                    {expanded.has(p1.process_1_id) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                                    {expanded.has(`p1-${p1.process_1_id}`) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                                 </span>
                                 <span className="tree-label">{p1.f1_name}</span>
                                 {p1.has_data && <FileText size={12} className="data-icon" style={{ marginLeft: 'auto', color: 'var(--accent-highlight)' }} />}
                             </div>
-                            {expanded.has(p1.process_1_id) && (
+                            {expanded.has(`p1-${p1.process_1_id}`) && (
                                 <div className="tree-children">
                                     {Array.from(p1.children.values()).map((p2) => (
                                         <div key={p2.process_2_id} className="tree-level-2">
                                             <div
                                                 className="tree-node tree-node-2"
-                                                onClick={() => toggleExpand(p2.process_2_id)}
+                                                onClick={() => toggleExpand(`p2-${p2.process_2_id}`)}
                                                 title={p2.f2_name}
                                             >
                                                 <span className="tree-icon">
-                                                    {expanded.has(p2.process_2_id) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                                                    {expanded.has(`p2-${p2.process_2_id}`) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                                                 </span>
                                                 <span className="tree-label">{p2.f2_name}</span>
                                                 {p2.has_data && <FileText size={12} className="data-icon" style={{ marginLeft: 'auto', color: 'var(--accent-highlight)' }} />}
                                             </div>
-                                            {expanded.has(p2.process_2_id) && (
+                                            {expanded.has(`p2-${p2.process_2_id}`) && (
                                                 <div className="tree-children">
                                                     {p2.children.map((p3) => (
                                                         <div
