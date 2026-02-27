@@ -1,13 +1,13 @@
 import React, { useCallback, useMemo, useState, useRef, useEffect } from 'react';
 import { DataEditor, GridCellKind } from '@glideapps/glide-data-grid';
 import { DropdownCell } from '@glideapps/glide-data-grid-cells';
-import { ChevronRight, MessageSquare, Plus } from 'lucide-react';
+import { ChevronRight, FileText, PlusSquare } from 'lucide-react';
 import "@glideapps/glide-data-grid/dist/index.css";
 
 const defaultColumns = [
-    { id: 'f4_name', title: 'Операция', width: 400, icon: 'info' },
-    { id: 'labor_hours', title: 'Трудозатраты', width: 180, icon: 'info' },
-    { id: 'system_id', title: 'ИТ-система', width: 220, icon: 'info' },
+    { id: 'f4_name', title: 'Операция', width: 500, icon: 'info', grow: 1 },
+    { id: 'labor_hours', title: 'Трудозатраты', width: 140, icon: 'info' },
+    { id: 'system_id', title: 'ИТ-система', width: 180, icon: 'info' },
 ];
 
 export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark, isSubmitted, selectedProcess }) {
@@ -274,6 +274,7 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark,
                         headerIcons={headerIcons}
                         onMouseMove={onMouseMove}
                         rowHeight={ROW_HEIGHT}
+                        headerHeight={ROW_HEIGHT}
                         onScroll={onScroll}
                     />
                 </div>
@@ -288,7 +289,7 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark,
                     overflow: 'hidden'
                 }}>
                     <div style={{
-                        height: ROW_HEIGHT - 1,
+                        height: ROW_HEIGHT,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -308,7 +309,7 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark,
                         }}
                         onMouseLeave={() => setTooltip(prev => ({ ...prev, visible: false }))}
                     >
-                        <MessageSquare size={18} />
+                        <FileText size={18} />
                     </div>
                     <div style={{
                         flex: 1,
@@ -334,7 +335,7 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark,
                                         transition: 'color 0.2s'
                                     }}
                                 >
-                                    {hasNote ? <MessageSquare size={18} /> : <Plus size={18} />}
+                                    {hasNote ? <FileText size={18} /> : <PlusSquare size={18} strokeWidth={1.5} />}
                                 </div>
                             );
                         })}
