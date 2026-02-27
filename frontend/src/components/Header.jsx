@@ -13,9 +13,17 @@ const ORG_NAME = import.meta.env.VITE_ORG_NAME || 'ProcessMeter';
 export default function Header({ user, onLogout, autoSaveStatus, onSubmit, hasChanges, isDark, onToggleTheme }) {
     return (
         <header className="topbar">
-            <div>
-                <div className="title">{ORG_NAME}</div>
-                <div className="subtitle">Планирование трудоемкости операций</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <img
+                    src={isDark ? '/logo-dark.png' : '/logo-light.png'}
+                    alt="ProcessLabs"
+                    style={{ height: '28px', width: 'auto' }}
+                />
+                <div style={{ height: '28px', width: '1px', background: 'var(--border)' }} />
+                <div>
+                    <div className="title" style={{ fontSize: '1rem' }}>{ORG_NAME}</div>
+                    <div className="subtitle" style={{ fontSize: '0.7rem' }}>Планирование трудоемкости операций</div>
+                </div>
             </div>
 
             <div className="topbar-actions">
