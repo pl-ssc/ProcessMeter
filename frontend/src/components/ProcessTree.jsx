@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { ChevronRight, ChevronDown, FileText, ChevronsDown, ChevronsUp } from 'lucide-react';
+import { ChevronRight, ChevronDown, FileText, ChevronsDown, ChevronsUp, Search, X } from 'lucide-react';
 
 const ProcessTree = React.memo(function ProcessTree({ processes, selectedF3Index, onSelectF3 }) {
     const [expanded, setExpanded] = useState(() => {
@@ -9,6 +9,8 @@ const ProcessTree = React.memo(function ProcessTree({ processes, selectedF3Index
         } catch (e) { }
         return new Set();
     });
+
+    const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         localStorage.setItem('pm_tree_expanded', JSON.stringify(Array.from(expanded)));
@@ -127,66 +129,169 @@ const ProcessTree = React.memo(function ProcessTree({ processes, selectedF3Index
         });
     };
 
+    const searchResults = useMemo(() => {
+        if (!searchQuery.trim()) return [];
+        const query = searchQuery.toLowerCase();
+        const results = [];
+        for (const p of processes) {
+            const match1 = p.f1_name.toLowerCase().includes(query);
+            const match2 = p.f2_name.toLowerCase().includes(query);
+            const match3 = p.f3_name.toLowerCase().includes(query);
+
+            if (match1 || match2 || match3) {
+                results.push({
+                    process_3_id: String(p.process_3_id),
+                    f1_name: p.f1_name,
+                    f2_name: p.f2_name,
+                    f3_name: p.f3_name,
+                    has_data: p.has_data,
+                    path: `${p.f1_name} → ${p.f2_name} → ${p.f3_name}`,
+                });
+            }
+        }
+        return results;
+    }, [processes, searchQuery]);
+
+    const handleSelectSearchResult = (p3_id) => {
+        onSelectF3(p3_id);
+        setSearchQuery('');
+    };
+
+    const highlightText = (text, query) => {
+        if (!query.trim()) return text;
+        const parts = text.split(new RegExp(`(${query})`, 'gi'));
+        return parts.map((part, i) =>
+            part.toLowerCase() === query.toLowerCase() ?
+                <span key={i} style={{ backgroundColor: 'var(--accent-hover)', color: 'white', borderRadius: '2px', padding: '0 2px' }}>{part}</span> : part
+        );
+    };
+
     return (
         <div className="process-tree-container" style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
-            <div className="process-tree-toolbar" style={{ display: 'flex', gap: '8px', padding: '8px 16px', borderBottom: '1px solid var(--border)', background: 'var(--bg-panel)' }}>
-                <button className="icon-btn" onClick={handleExpandAll} title="Развернуть все" style={{ padding: '4px' }}>
+            <div className="process-tree-toolbar" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderBottom: '1px solid var(--border)', background: 'var(--bg-panel)' }}>
+                <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
+                    <Search size={14} style={{ position: 'absolute', left: '8px', color: 'var(--text-muted)' }} />
+                    <input
+                        type="text"
+                        placeholder="Поиск..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        style={{
+                            width: '100%',
+                            padding: '6px 28px',
+                            fontSize: '0.8125rem',
+                            borderRadius: '4px',
+                            border: '1px solid var(--border)',
+                            background: 'var(--bg-app)',
+                            height: '28px'
+                        }}
+                    />
+                    {searchQuery && (
+                        <button
+                            className="icon-btn"
+                            onClick={() => setSearchQuery('')}
+                            style={{ position: 'absolute', right: '4px', padding: '2px', color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                        >
+                            <X size={14} />
+                        </button>
+                    )}
+                </div>
+                <button className="icon-btn" onClick={handleExpandAll} title="Развернуть все" style={{ padding: '6px' }}>
                     <ChevronsDown size={16} />
                 </button>
-                <button className="icon-btn" onClick={handleCollapseAll} title="Свернуть все" style={{ padding: '4px' }}>
+                <button className="icon-btn" onClick={handleCollapseAll} title="Свернуть все" style={{ padding: '6px' }}>
                     <ChevronsUp size={16} />
                 </button>
             </div>
+
             <div className="process-tree" style={{ flex: 1, borderTop: 'none', overflowY: 'auto' }}>
-                {tree.map((p1) => (
-                    <div key={p1.process_1_id} className="tree-level-1">
-                        <div
-                            className="tree-node tree-node-1"
-                            onClick={() => toggleExpand(p1.process_1_id)}
-                            title={p1.f1_name}
-                        >
-                            <span className="tree-icon">
-                                {expanded.has(p1.process_1_id) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                            </span>
-                            <span className="tree-label">{p1.f1_name}</span>
-                            {p1.has_data && <FileText size={12} className="data-icon" style={{ marginLeft: 'auto', color: '#10b981' }} />}
-                        </div>
-                        {expanded.has(p1.process_1_id) && (
-                            <div className="tree-children">
-                                {Array.from(p1.children.values()).map((p2) => (
-                                    <div key={p2.process_2_id} className="tree-level-2">
-                                        <div
-                                            className="tree-node tree-node-2"
-                                            onClick={() => toggleExpand(p2.process_2_id)}
-                                            title={p2.f2_name}
-                                        >
-                                            <span className="tree-icon">
-                                                {expanded.has(p2.process_2_id) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                                            </span>
-                                            <span className="tree-label">{p2.f2_name}</span>
-                                            {p2.has_data && <FileText size={12} className="data-icon" style={{ marginLeft: 'auto', color: '#10b981' }} />}
-                                        </div>
-                                        {expanded.has(p2.process_2_id) && (
-                                            <div className="tree-children">
-                                                {p2.children.map((p3) => (
-                                                    <div
-                                                        key={p3.process_3_id}
-                                                        className={`tree-node tree-node-3 ${selectedF3Index === p3.process_3_id ? 'selected' : ''}`}
-                                                        onClick={() => onSelectF3(p3.process_3_id)}
-                                                        title={p3.f3_name}
-                                                    >
-                                                        <span className="tree-label">{p3.f3_name}</span>
-                                                        {p3.has_data && <FileText size={12} className="data-icon" style={{ marginLeft: 'auto', color: '#10b981' }} />}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
+                {searchQuery.trim() ? (
+                    <div className="search-results" style={{ padding: '8px' }}>
+                        {searchResults.length === 0 ? (
+                            <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                                Ничего не найдено
                             </div>
+                        ) : (
+                            searchResults.map(res => (
+                                <div
+                                    key={res.process_3_id}
+                                    className={`tree-node search-result-node ${selectedF3Index === res.process_3_id ? 'selected' : ''}`}
+                                    onClick={() => handleSelectSearchResult(res.process_3_id)}
+                                    style={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'flex-start',
+                                        padding: '8px 12px',
+                                        gap: '4px',
+                                        borderBottom: '1px solid var(--border)',
+                                        margin: '0',
+                                        borderRadius: '0'
+                                    }}
+                                >
+                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', whiteSpace: 'normal', lineHeight: 1.2 }}>
+                                        {highlightText(`${res.f1_name} → ${res.f2_name}`, searchQuery)}
+                                    </div>
+                                    <div style={{ display: 'flex', width: '100%', alignItems: 'center' }}>
+                                        <span className="tree-label" style={{ fontWeight: 500, whiteSpace: 'normal', lineHeight: 1.2 }}>
+                                            {highlightText(res.f3_name, searchQuery)}
+                                        </span>
+                                        {res.has_data && <FileText size={12} className="data-icon" style={{ marginLeft: 'auto', flexShrink: 0, color: '#10b981' }} />}
+                                    </div>
+                                </div>
+                            ))
                         )}
                     </div>
-                ))}
+                ) : (
+                    tree.map((p1) => (
+                        <div key={p1.process_1_id} className="tree-level-1">
+                            <div
+                                className="tree-node tree-node-1"
+                                onClick={() => toggleExpand(p1.process_1_id)}
+                                title={p1.f1_name}
+                            >
+                                <span className="tree-icon">
+                                    {expanded.has(p1.process_1_id) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                                </span>
+                                <span className="tree-label">{p1.f1_name}</span>
+                                {p1.has_data && <FileText size={12} className="data-icon" style={{ marginLeft: 'auto', color: '#10b981' }} />}
+                            </div>
+                            {expanded.has(p1.process_1_id) && (
+                                <div className="tree-children">
+                                    {Array.from(p1.children.values()).map((p2) => (
+                                        <div key={p2.process_2_id} className="tree-level-2">
+                                            <div
+                                                className="tree-node tree-node-2"
+                                                onClick={() => toggleExpand(p2.process_2_id)}
+                                                title={p2.f2_name}
+                                            >
+                                                <span className="tree-icon">
+                                                    {expanded.has(p2.process_2_id) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                                                </span>
+                                                <span className="tree-label">{p2.f2_name}</span>
+                                                {p2.has_data && <FileText size={12} className="data-icon" style={{ marginLeft: 'auto', color: '#10b981' }} />}
+                                            </div>
+                                            {expanded.has(p2.process_2_id) && (
+                                                <div className="tree-children">
+                                                    {p2.children.map((p3) => (
+                                                        <div
+                                                            key={p3.process_3_id}
+                                                            className={`tree-node tree-node-3 ${selectedF3Index === p3.process_3_id ? 'selected' : ''}`}
+                                                            onClick={() => onSelectF3(p3.process_3_id)}
+                                                            title={p3.f3_name}
+                                                        >
+                                                            <span className="tree-label">{p3.f3_name}</span>
+                                                            {p3.has_data && <FileText size={12} className="data-icon" style={{ marginLeft: 'auto', color: '#10b981' }} />}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ))
+                )}
             </div>
         </div>
     );

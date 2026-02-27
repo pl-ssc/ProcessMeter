@@ -126,7 +126,11 @@ export default function AnswerGrid({ answers, systems, onEdit, dirtyMap, isDark,
         const next = { ...item };
 
         if (col === 1 && newValue.kind === GridCellKind.Number) {
-            const val = newValue.data === null ? null : Number(newValue.data);
+            let val = null;
+            if (newValue.data !== null && newValue.data !== undefined && newValue.data !== '') {
+                val = Number(newValue.data);
+            }
+
             if (val !== null && (Number.isNaN(val) || val < 0 || val > 240)) {
                 window.alert('Трудозатраты должны быть числом от 0 до 240');
                 return;
