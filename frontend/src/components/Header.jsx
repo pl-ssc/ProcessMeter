@@ -16,7 +16,7 @@ export default function Header({ user, onLogout, autoSaveStatus, onSubmit, hasCh
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                 <div style={{ width: '220px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', overflow: 'hidden' }}>
                     <img
-                        src={isDark ? '/logo-dark.png' : '/logo-light-transparent.png'}
+                        src={isDark ? '/logo-dark.png' : '/logo-light-true-transparent.png'}
                         alt="ProcessLabs"
                         style={{
                             height: '64px',
