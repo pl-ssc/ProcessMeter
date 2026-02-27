@@ -14,7 +14,7 @@ export default function Header({ user, onLogout, autoSaveStatus, onSubmit, hasCh
     return (
         <header className="topbar">
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <div style={{ width: '180px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', overflow: 'hidden' }}>
+                <div style={{ width: '220px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', overflow: 'hidden' }}>
                     <img
                         src={isDark ? '/logo-dark.png' : '/logo-light.png'}
                         alt="ProcessLabs"
@@ -22,7 +22,6 @@ export default function Header({ user, onLogout, autoSaveStatus, onSubmit, hasCh
                             height: '64px',
                             width: 'auto',
                             mixBlendMode: isDark ? 'lighten' : 'multiply',
-                            filter: isDark ? 'contrast(1.1)' : 'contrast(1.1) brightness(1.05)',
                             marginLeft: '-10px' // Сдвиг влево, чтобы компенсировать внутренние поля логотипа
                         }}
                     />
