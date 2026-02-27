@@ -37,8 +37,6 @@ export const env = {
     ORG_NAME: getEnv('ORG_NAME', 'ProcessMeter'),
     NOCODB_URL: getEnv('NOCODB_URL'),
     NOCODB_API_TOKEN: getEnv('NOCODB_API_TOKEN'),
-    METABASE_SECRET_KEY: getEnv('METABASE_SECRET_KEY'),
-    METABASE_SITE_URL: getEnv('METABASE_SITE_URL'),
 };
 
 // Fail fast in production if critical secrets are not set
