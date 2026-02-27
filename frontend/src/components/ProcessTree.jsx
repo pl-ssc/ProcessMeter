@@ -269,6 +269,39 @@ const ProcessTree = React.memo(function ProcessTree({ processes, selectedF3Index
                             ))
                         )}
                     </div>
+                ) : tree.length === 1 ? (
+                    Array.from(tree[0].children.values()).map((p2) => (
+                        <div key={p2.process_2_id} className="tree-level-1">
+                            <div
+                                className="tree-node tree-node-1"
+                                onClick={() => toggleExpand(`p2-${p2.process_2_id}`)}
+                                title={p2.f2_name}
+                            >
+                                <span className="tree-icon">
+                                    {expanded.has(`p2-${p2.process_2_id}`) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                                </span>
+                                <span className="tree-label">{p2.f2_name}</span>
+                                {p2.has_data && <FileText size={12} className="data-icon" style={{ marginLeft: 'auto', color: 'var(--accent-highlight)' }} />}
+                            </div>
+                            {expanded.has(`p2-${p2.process_2_id}`) && (
+                                <div className="tree-children">
+                                    {p2.children.map((p3) => (
+                                        <div key={p3.process_3_id} className="tree-level-2">
+                                            <div
+                                                className={`tree-node tree-node-2 ${selectedF3Index === p3.process_3_id ? 'selected' : ''}`}
+                                                onClick={() => onSelectF3(p3.process_3_id)}
+                                                title={p3.f3_name}
+                                            >
+                                                <span className="tree-icon"></span>
+                                                <span className="tree-label">{p3.f3_name}</span>
+                                                {p3.has_data && <FileText size={12} className="data-icon" style={{ marginLeft: 'auto', color: 'var(--accent-highlight)' }} />}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ))
                 ) : (
                     tree.map((p1) => (
                         <div key={p1.process_1_id} className="tree-level-1">
