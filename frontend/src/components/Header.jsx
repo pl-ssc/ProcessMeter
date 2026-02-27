@@ -14,15 +14,23 @@ export default function Header({ user, onLogout, autoSaveStatus, onSubmit, hasCh
     return (
         <header className="topbar">
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <img
-                    src={isDark ? '/logo-dark.png' : '/logo-light.png'}
-                    alt="ProcessLabs"
-                    style={{ height: '28px', width: 'auto' }}
-                />
-                <div style={{ height: '28px', width: '1px', background: 'var(--border)' }} />
+                <div style={{ width: '140px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                    <img
+                        src={isDark ? '/logo-dark.png' : '/logo-light.png'}
+                        alt="ProcessLabs"
+                        style={{
+                            height: '56px',
+                            width: 'auto',
+                            mixBlendMode: isDark ? 'normal' : 'multiply',
+                            transform: 'scale(1.4)',
+                            transformOrigin: 'left center'
+                        }}
+                    />
+                </div>
+                <div style={{ height: '32px', width: '1px', background: 'var(--border)' }} />
                 <div>
-                    <div className="title" style={{ fontSize: '1rem' }}>{ORG_NAME}</div>
-                    <div className="subtitle" style={{ fontSize: '0.7rem' }}>Анализ трудоемкости операций</div>
+                    <div className="title" style={{ fontSize: '1.1rem', lineHeight: '1.2' }}>{ORG_NAME}</div>
+                    <div className="subtitle" style={{ fontSize: '0.75rem', opacity: 0.8 }}>Анализ трудоемкости операций</div>
                 </div>
             </div>
 
