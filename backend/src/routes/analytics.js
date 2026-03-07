@@ -181,6 +181,7 @@ export default async function analyticsRoutes(fastify) {
         }));
 
         const processMap = new Map();
+        const processLevel2Map = new Map();
         const executorMap = new Map();
         const departmentHoursMap = new Map();
         const professionHoursMap = new Map();
@@ -191,14 +192,18 @@ export default async function analyticsRoutes(fastify) {
 
         for (const answer of answers) {
             const processKey = answer.process_level_1 || 'Без процесса';
+            const processLevel2Key = answer.process_level_2 || 'Без процесса L2';
             const executorKey = answer.executor_type || 'Не указан';
             const departmentKey = answer.department_name || 'Без подразделения';
             const professionKey = answer.profession_name || 'Без профессии';
             const systemKey = answer.system_name || 'Без ИТ-системы';
             const operationKey = answer.operation_name || 'Без операции';
-            const mixKey = `${departmentKey}__${processKey}`;
+            const mixKey = `${departmentKey}__${processLevel2Key}`;
 
             processMap.set(processKey, (processMap.get(processKey) || 0) + answer.labor_hours);
+            const processLevel2Group = processLevel2Map.get(processKey) || new Map();
+            processLevel2Group.set(processLevel2Key, (processLevel2Group.get(processLevel2Key) || 0) + answer.labor_hours);
+            processLevel2Map.set(processKey, processLevel2Group);
             executorMap.set(executorKey, (executorMap.get(executorKey) || 0) + answer.labor_hours);
             departmentHoursMap.set(departmentKey, (departmentHoursMap.get(departmentKey) || 0) + answer.labor_hours);
             professionHoursMap.set(professionKey, (professionHoursMap.get(professionKey) || 0) + answer.labor_hours);
@@ -245,7 +250,7 @@ export default async function analyticsRoutes(fastify) {
 
             departmentProcessMixMap.set(mixKey, {
                 department_name: departmentKey,
-                process_level_1: processKey,
+                process_level_2: processLevel2Key,
                 labor_hours: round((departmentProcessMixMap.get(mixKey)?.labor_hours || 0) + answer.labor_hours),
             });
         }
@@ -259,6 +264,27 @@ export default async function analyticsRoutes(fastify) {
             10,
             'labor_hours'
         );
+
+        const processLevel2TopByLevel1 = [...processLevel2Map.entries()]
+            .map(([process_level_1, items]) => {
+                const level1TotalHours = processMap.get(process_level_1) || 0;
+                const top_processes_level_2 = [...items.entries()]
+                    .map(([name, labor_hours]) => ({
+                        name,
+                        labor_hours: round(labor_hours),
+                        fte: round(labor_hours / safeDivisor),
+                    }))
+                    .sort((left, right) => right.labor_hours - left.labor_hours)
+                    .slice(0, 5);
+
+                return {
+                    process_level_1,
+                    labor_hours: round(level1TotalHours),
+                    fte: round(level1TotalHours / safeDivisor),
+                    top_processes_level_2,
+                };
+            })
+            .sort((left, right) => right.labor_hours - left.labor_hours);
 
         const executorDistribution = [...executorMap.entries()].map(([name, labor_hours]) => ({
             name,
@@ -347,6 +373,7 @@ export default async function analyticsRoutes(fastify) {
             department_progress: departmentProgress.sort((left, right) => right.completion_rate - left.completion_rate),
             labor: {
                 process_totals: processTotals,
+                process_level_2_top_by_level_1: processLevel2TopByLevel1,
                 executor_distribution: executorDistribution.sort((left, right) => right.labor_hours - left.labor_hours),
                 department_hours: departmentHours,
                 profession_hours: professionHours,

@@ -240,11 +240,11 @@ export default function AnalyticsPage({ user, onLogout, isDark, onToggleTheme, o
                 <div className="grid gap-6 xl:grid-cols-2">
                   <Card>
                     <CardHeader>
-                      <CardTitle>Топ процессов L1 по трудозатратам</CardTitle>
-                      <CardDescription>Основной управленческий срез для оценки объёма функций.</CardDescription>
+                      <CardTitle>Топ процессов L2 внутри L1</CardTitle>
+                      <CardDescription>ТОП-5 процессов 2 уровня по трудозатратам внутри каждого процесса 1 уровня.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <BarList items={data.labor.process_totals.map((item) => ({ label: item.name, value: item.labor_hours, hint: formatFte(item.fte) }))} suffix=" ч" />
+                      <GroupedProcessBarList groups={data.labor.process_level_2_top_by_level_1} />
                     </CardContent>
                   </Card>
                   <Card>
@@ -262,11 +262,15 @@ export default function AnalyticsPage({ user, onLogout, isDark, onToggleTheme, o
                     title="Подразделения по FTE"
                     description="Сравнение нагрузки между орг-единицами."
                     rows={data.labor.department_hours}
+                    valueKey="fte"
+                    valueFormatter={(value) => formatFte(value)}
                   />
                   <MetricTable
                     title="Профессии по FTE"
                     description="Сравнение профилей нагрузки по ролям и должностям."
                     rows={data.labor.profession_hours}
+                    valueKey="fte"
+                    valueFormatter={(value) => formatFte(value)}
                   />
                 </div>
               </TabsContent>
@@ -282,12 +286,14 @@ export default function AnalyticsPage({ user, onLogout, isDark, onToggleTheme, o
                     title="Операции с наибольшим средним временем"
                     description="Кандидаты на приоритизацию и детальную декомпозицию."
                     rows={data.processes.top_operations_by_avg}
+                    labelKey="operation_name"
                     valueKey="avg_labor_hours"
                   />
                   <MetricTable
                     title="Операции с наибольшим числом комментариев"
                     description="Сигналы о проблемных местах, неоднозначностях и ручных обходах."
                     rows={data.processes.top_operations_by_notes}
+                    labelKey="operation_name"
                     valueKey="notes_count"
                     valueFormatter={(value) => `${value} комм.`}
                   />
@@ -407,11 +413,11 @@ export default function AnalyticsPage({ user, onLogout, isDark, onToggleTheme, o
                   />
                 </div>
                 <MetricTable
-                  title="Подразделение -> процесс L1"
+                  title="Подразделение -> процесс L2"
                   description="Показывает, какие функции доминируют внутри каждого подразделения."
                   rows={data.organization.department_process_mix}
                   labelKey="department_name"
-                  secondaryKey="process_level_1"
+                  secondaryKey="process_level_2"
                   valueKey="labor_hours"
                 />
               </TabsContent>
@@ -622,6 +628,52 @@ function DonutLegend({ items }) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function GroupedProcessBarList({ groups }) {
+  if (!groups?.length) {
+    return <div className="rounded-2xl border border-dashed p-8 text-sm text-muted-foreground">Нет данных для отображения.</div>;
+  }
+
+  const max = Math.max(...groups.flatMap((group) => group.top_processes_level_2.map((item) => Number(item.labor_hours || 0))), 1);
+
+  return (
+    <div className="space-y-6">
+      {groups.map((group, groupIndex) => (
+        <div key={group.process_level_1} className="space-y-3 rounded-2xl border px-4 py-4">
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <div className="text-lg font-semibold">{group.process_level_1}</div>
+              <div className="text-sm text-muted-foreground">{formatFte(group.fte)} • {formatHours(group.labor_hours)}</div>
+            </div>
+            <Badge variant="secondary">Топ-5 L2</Badge>
+          </div>
+          <div className="space-y-3">
+            {group.top_processes_level_2.map((item, index) => (
+              <div key={`${group.process_level_1}-${item.name}`} className="space-y-2">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="truncate font-medium">{item.name}</div>
+                    <div className="text-xs text-muted-foreground">{formatFte(item.fte)}</div>
+                  </div>
+                  <div className="shrink-0 text-sm font-semibold">{formatHours(item.labor_hours)}</div>
+                </div>
+                <div className="h-2.5 rounded-full bg-secondary">
+                  <div
+                    className="h-2.5 rounded-full"
+                    style={{
+                      width: `${Math.max((Number(item.labor_hours || 0) / max) * 100, 8)}%`,
+                      background: colorVar(groupIndex + index),
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
