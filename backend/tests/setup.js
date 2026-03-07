@@ -2,11 +2,13 @@ import { buildApp } from '../src/app.js';
 import { env } from '../src/config/env.js';
 import pool from '../src/db/index.js';
 import bcrypt from 'bcryptjs';
+import { assertSafeTestDatabase } from './guard-test-db.js';
 
 /**
  * Создает инстанс Fastify для тестов, переиспользуя боевой код из src/app.js
  */
 export async function buildTestApp() {
+    assertSafeTestDatabase();
     // Отключаем логи для чистоты вывода тестов
     const app = await buildApp({ logger: false });
     await app.ready();
@@ -17,6 +19,7 @@ export async function buildTestApp() {
  * Очищает таблицы в БД перед каждым тестом (TRUNCATE).
  */
 export async function clearDB() {
+    assertSafeTestDatabase();
     const client = await pool.connect();
     try {
         await client.query(`

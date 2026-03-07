@@ -2,10 +2,12 @@ import { runner } from 'node-pg-migrate';
 import { env } from '../src/config/env.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { assertSafeTestDatabase } from './guard-test-db.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 async function run() {
+    assertSafeTestDatabase();
     console.log('Running test database migrations...');
     await runner({
         databaseUrl: env.TARGET_DATABASE_URL,
