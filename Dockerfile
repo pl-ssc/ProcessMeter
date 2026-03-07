@@ -1,5 +1,14 @@
 FROM node:20-alpine AS build-frontend
 WORKDIR /app/frontend
+
+ARG VITE_API_URL
+ARG VITE_ORG_NAME
+ARG VITE_DEMO_MODE
+
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_ORG_NAME=$VITE_ORG_NAME
+ENV VITE_DEMO_MODE=$VITE_DEMO_MODE
+
 COPY frontend/package.json ./
 RUN npm install
 COPY frontend ./
