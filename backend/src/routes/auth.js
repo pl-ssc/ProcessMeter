@@ -1,7 +1,83 @@
 import bcrypt from 'bcryptjs';
-import { query } from '../db/index.js';
+import pool, { query } from '../db/index.js';
 import { createToken, validateToken, markTokenUsed, deleteToken } from '../services/tokenService.js';
 import { sendPasswordLinkEmail } from '../services/emailService.js';
+import { env } from '../config/env.js';
+
+const DEMO_USERS = {
+    admin: {
+        username: 'demo-admin@processmeter.local',
+        full_name: 'Демо Администратор',
+        role: 'admin',
+    },
+    auditor: {
+        username: 'demo-analyst@processmeter.local',
+        full_name: 'Демо Аналитик',
+        role: 'auditor',
+    },
+    respondent: {
+        username: 'demo-respondent@processmeter.local',
+        full_name: 'Демо Респондент',
+        role: 'respondent',
+    },
+};
+
+async function ensureDemoUser(role) {
+    const template = DEMO_USERS[role];
+    if (!template) {
+        throw new Error('invalid demo role');
+    }
+
+    const { rows: existingRows } = await query(
+        'SELECT id, username, full_name, role FROM users WHERE username = $1 AND is_active = true LIMIT 1',
+        [template.username]
+    );
+    if (existingRows[0]) {
+        return existingRows[0];
+    }
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const passwordHash = await bcrypt.hash(`demo-${role}-login`, 10);
+        const { rows } = await client.query(
+            `INSERT INTO users (username, password_hash, full_name, role, is_active, password_changed_at)
+             VALUES ($1, $2, $3, $4, true, now())
+             RETURNING id, username, full_name, role`,
+            [template.username, passwordHash, template.full_name, template.role]
+        );
+        const user = rows[0];
+
+        if (role === 'respondent') {
+            const { rows: processRows } = await client.query(
+                `SELECT id
+                 FROM process_1
+                 WHERE is_active IS DISTINCT FROM false
+                 ORDER BY COALESCE(sort, 0), f1_name`
+            );
+
+            if (processRows.length > 0) {
+                const userIds = processRows.map(() => user.id);
+                const processIds = processRows.map((processRow) => processRow.id);
+                await client.query(
+                    `INSERT INTO user_process_1_access (user_id, process_1_id)
+                     SELECT unnest($1::int[]), unnest($2::int[])`,
+                    [userIds, processIds]
+                );
+                await client.query('SELECT copy_operations_to_user_answers($1)', [user.id]);
+            }
+        }
+
+        await client.query('COMMIT');
+        return user;
+    } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+    } finally {
+        client.release();
+    }
+}
 
 export default async function authRoutes(fastify, options) {
     // ── Login ────────────────────────────────────────────────────────────────
@@ -45,6 +121,42 @@ export default async function authRoutes(fastify, options) {
             maxAge: 60 * 60 * 24 * 7
         });
         return { user: { id: user.id, username: user.username, full_name: user.full_name, role: user.role } };
+    });
+
+    fastify.post('/demo-login', {
+        schema: {
+            body: {
+                type: 'object',
+                properties: {
+                    role: { type: 'string', enum: ['admin', 'auditor', 'respondent'] }
+                },
+                required: ['role']
+            }
+        }
+    }, async (request, reply) => {
+        if (!env.DEMO_MODE) {
+            return reply.code(403).send({ error: 'demo mode is disabled' });
+        }
+
+        const user = await ensureDemoUser(request.body.role);
+        const token = fastify.jwt.sign({
+            sub: user.id,
+            username: user.username,
+            full_name: user.full_name,
+            role: user.role
+        });
+
+        reply.setCookie('pm_token', token, {
+            path: '/',
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 60 * 60 * 24 * 7
+        });
+
+        return {
+            user: { id: user.id, username: user.username, full_name: user.full_name, role: user.role }
+        };
     });
 
     // ── Logout ───────────────────────────────────────────────────────────────

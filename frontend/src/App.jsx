@@ -1,12 +1,14 @@
 import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { apiFetch } from './api.js';
 import AdminView from './components/AdminView.jsx';
+import DemoEntryPage from './components/DemoEntryPage.jsx';
 import LoginPage from './components/LoginPage.jsx';
 import RespondentView from './components/RespondentView.jsx';
 import SetPasswordPage from './components/SetPasswordPage.jsx';
 import { AppSkeleton } from './components/Skeleton.jsx';
 
 const AnalyticsPage = lazy(() => import('./components/AnalyticsPage.jsx'));
+const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true';
 
 function getPathname() {
   return window.location.pathname || '/';
@@ -29,6 +31,7 @@ export default function App() {
   const [setPasswordToken, setSetPasswordToken] = useState(getSetPasswordToken);
   const [isDark, setIsDark] = useState(false);
   const [pathname, setPathname] = useState(getPathname);
+  const [showPasswordLogin, setShowPasswordLogin] = useState(false);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDark);
@@ -84,6 +87,19 @@ export default function App() {
     }
   };
 
+  const handleDemoLogin = async (role) => {
+    setLoginError('');
+    try {
+      const response = await apiFetch('/api/auth/demo-login', {
+        method: 'POST',
+        body: JSON.stringify({ role }),
+      });
+      setUser(response.user);
+    } catch (error) {
+      setLoginError(error.message || 'Не удалось выполнить demo-вход');
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await apiFetch('/api/auth/logout', { method: 'POST' });
@@ -128,6 +144,16 @@ export default function App() {
   }
 
   if (!user) {
+    if (DEMO_MODE && !showPasswordLogin) {
+      return (
+        <DemoEntryPage
+          onDemoLogin={handleDemoLogin}
+          onOpenPasswordLogin={() => setShowPasswordLogin(true)}
+          error={loginError}
+        />
+      );
+    }
+
     return (
       <LoginPage
         onLogin={handleLogin}
@@ -135,6 +161,7 @@ export default function App() {
         error={loginError}
         forgotPasswordState={forgotPasswordState}
         forgotPasswordError={forgotPasswordError}
+        onBackToDemo={DEMO_MODE ? () => setShowPasswordLogin(false) : null}
       />
     );
   }

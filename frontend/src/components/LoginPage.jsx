@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from './ui/alert.jsx';
 
 const ORG_NAME = import.meta.env.VITE_ORG_NAME || 'ProcessMeter';
 
-export default function LoginPage({ onLogin, onForgotPassword, error, forgotPasswordState, forgotPasswordError }) {
+export default function LoginPage({ onLogin, onForgotPassword, error, forgotPasswordState, forgotPasswordError, onBackToDemo }) {
   const [showPassword, setShowPassword] = useState(false);
   const [isForgotMode, setIsForgotMode] = useState(false);
 
@@ -113,6 +113,12 @@ export default function LoginPage({ onLogin, onForgotPassword, error, forgotPass
               <Button type="button" variant="ghost" className="w-full" onClick={() => setIsForgotMode(true)}>
                 Забыли пароль?
               </Button>
+              {onBackToDemo ? (
+                <Button type="button" variant="ghost" className="w-full" onClick={onBackToDemo}>
+                  <ArrowLeft className="h-4 w-4" />
+                  Вернуться к выбору роли
+                </Button>
+              ) : null}
             </form>
           )}
         </CardContent>

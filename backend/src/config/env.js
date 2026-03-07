@@ -28,6 +28,7 @@ export const env = {
     HOST: getEnv('HOST', '0.0.0.0'),
     TARGET_DATABASE_URL: getEnv('TARGET_DATABASE_URL'),
     JWT_SECRET: getEnv('JWT_SECRET', JWT_SECRET_DEFAULT),
+    DEMO_MODE: getEnv('DEMO_MODE', 'false') === 'true',
     ADMIN_API_KEY: getEnv('ADMIN_API_KEY', 'dev-admin-key'),
     ADMIN_USERNAME: getEnv('ADMIN_USERNAME'),
     ADMIN_PASSWORD: getEnv('ADMIN_PASSWORD'),

@@ -45,7 +45,7 @@ export async function createTestUser({ email, password, role = 'respondent', isA
     const hash = await bcrypt.hash(password, 2); // Быстрый хэш для тестов
     const { rows } = await pool.query(
         `INSERT INTO users (username, password_hash, full_name, role, is_active, password_changed_at)
-         VALUES ($1, $2, $3, $4, $5, now())
+         VALUES ($1, $2, $3, $4, $5, now() - interval '1 second')
          RETURNING id, username, full_name, role, is_active`,
         [email, hash, 'Test User', role, isActive]
     );
@@ -59,8 +59,7 @@ export async function getAuthCookie(app, user) {
     const token = app.jwt.sign({
         sub: user.id,
         email: user.username,
-        role: user.role,
-        iat: Math.floor(Date.now() / 1000) + 1,
+        role: user.role
     }, { expiresIn: '12h' });
 
     return `pm_token=${token}`;
