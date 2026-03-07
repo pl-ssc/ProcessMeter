@@ -14,4 +14,10 @@ export default fp(async (fastify, opts) => {
             reply.code(403).send({ error: 'forbidden' });
         }
     });
+
+    fastify.decorate('requireAnalyticsRole', async (request, reply) => {
+        if (request.user?.role !== 'admin' && request.user?.role !== 'auditor') {
+            reply.code(403).send({ error: 'forbidden' });
+        }
+    });
 });

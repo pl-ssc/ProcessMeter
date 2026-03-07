@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import pool from '../db/index.js';
 
 export async function createUser({ username, password, full_name, role, department_id, profession_id, process_1_access }) {
-    const safeRole = role === 'admin' ? 'admin' : 'respondent';
+    const safeRole = role === 'admin' || role === 'auditor' ? role : 'respondent';
     const client = await pool.connect();
     try {
         await client.query('BEGIN');

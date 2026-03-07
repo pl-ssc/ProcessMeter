@@ -18,7 +18,7 @@ export default async function adminUsersRoutes(fastify, options) {
             idx += 1;
         }
 
-        if (role && (role === 'admin' || role === 'respondent')) {
+        if (role && (role === 'admin' || role === 'auditor' || role === 'respondent')) {
             params.push(role);
             conditions.push(`role = $${idx}`);
             idx += 1;
@@ -35,22 +35,31 @@ export default async function adminUsersRoutes(fastify, options) {
         }
 
         const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
-        const { rows } = await query(
-            `SELECT u.id, u.username, u.full_name, u.role, u.is_active, u.created_at, u.is_survey_completed,
-              u.department_id, d.name AS department_name,
-              u.profession_id, p.name AS profession_name,
-              COALESCE(count(a.process_1_id), 0) AS access_count
-       FROM users u
-       LEFT JOIN user_process_1_access a ON a.user_id = u.id
-       LEFT JOIN departments d ON d.id = u.department_id
-       LEFT JOIN professions p ON p.id = u.profession_id
-       ${where}
-       GROUP BY u.id, d.name, p.name
-       ORDER BY u.created_at DESC, u.id DESC`,
-            params
-        );
+        const [{ rows: adminStats }, { rows }] = await Promise.all([
+            query(`SELECT COUNT(*)::int AS total_admins FROM users WHERE role = 'admin'`),
+            query(
+                `SELECT u.id, u.username, u.full_name, u.role, u.is_active, u.created_at, u.is_survey_completed,
+                  u.department_id, d.name AS department_name,
+                  u.profession_id, p.name AS profession_name,
+                  COALESCE(count(a.process_1_id), 0) AS access_count
+           FROM users u
+           LEFT JOIN user_process_1_access a ON a.user_id = u.id
+           LEFT JOIN departments d ON d.id = u.department_id
+           LEFT JOIN professions p ON p.id = u.profession_id
+           ${where}
+           GROUP BY u.id, d.name, p.name
+           ORDER BY u.created_at DESC, u.id DESC`,
+                params
+            )
+        ]);
+        const totalAdmins = adminStats[0]?.total_admins || 0;
 
-        return { users: rows };
+        return {
+            users: rows.map((user) => ({
+                ...user,
+                can_delete: !(user.role === 'admin' && totalAdmins <= 1),
+            }))
+        };
     });
 
     fastify.post('/', {
@@ -62,10 +71,10 @@ export default async function adminUsersRoutes(fastify, options) {
                     username: { type: 'string' },
                     password: { type: 'string' },
                     full_name: { type: 'string', nullable: true },
-                    role: { type: 'string', enum: ['admin', 'respondent'] },
+                    role: { type: 'string', enum: ['admin', 'auditor', 'respondent'] },
                     department_id: { type: ['integer', 'null'] },
                     profession_id: { type: ['integer', 'null'] },
-                    process_1_access: { type: 'array', items: { type: 'string' }, minItems: 1 }
+                    process_1_access: { type: 'array', items: { type: 'string' } }
                 },
                 required: ['username', 'password', 'process_1_access']
             }
@@ -74,7 +83,29 @@ export default async function adminUsersRoutes(fastify, options) {
         const { username, password, full_name, role, department_id, profession_id, process_1_access } = request.body;
         try {
             const user = await createUser({ username, password, full_name, role, department_id, profession_id, process_1_access });
-            return { user };
+            let invite_sent = false;
+            let invite_error = null;
+
+            if (isValidEmail(user.username)) {
+                const token = await createToken(user.id, 'invite');
+                try {
+                    await sendPasswordLinkEmail({
+                        type: 'invite',
+                        to: user.username,
+                        fullName: user.full_name,
+                        token
+                    });
+                    invite_sent = true;
+                } catch (err) {
+                    request.log.error(err, 'sendPasswordLinkEmail (invite after create) failed');
+                    invite_error = 'Пользователь создан, но приглашение не отправлено. Проверьте SMTP-настройки.';
+                    await deleteToken(token).catch(e => request.log.error(e, 'deleteToken failed'));
+                }
+            } else {
+                invite_error = `Пользователь создан, но email невалиден: ${user.username}`;
+            }
+
+            return { user, invite_sent, invite_error };
         } catch (err) {
             request.log.error(err);
             return reply.code(500).send({ error: 'create user failed' });
@@ -93,7 +124,7 @@ export default async function adminUsersRoutes(fastify, options) {
 
         const passwordHash = await bcrypt.hash(password, 10);
         const { rowCount } = await query(
-            'UPDATE users SET password_hash = $1 WHERE id = $2',
+            'UPDATE users SET password_hash = $1, password_changed_at = now() WHERE id = $2',
             [passwordHash, id]
         );
 
@@ -122,6 +153,48 @@ export default async function adminUsersRoutes(fastify, options) {
         if (rowCount === 0) {
             return reply.code(404).send({ error: 'user not found' });
         }
+
+        return { ok: true };
+    });
+
+    fastify.delete('/:id', {
+        preHandler: [fastify.authenticate, fastify.requireAdminRole],
+        schema: {
+            params: { type: 'object', properties: { id: { type: 'integer' } }, required: ['id'] }
+        }
+    }, async (request, reply) => {
+        const { id } = request.params;
+
+        if (Number(request.user?.sub) === Number(id)) {
+            return reply.code(400).send({ error: 'Нельзя удалить текущего пользователя.' });
+        }
+
+        const { rows: userRows } = await query(
+            'SELECT id, role FROM users WHERE id = $1',
+            [id]
+        );
+
+        if (!userRows[0]) {
+            return reply.code(404).send({ error: 'user not found' });
+        }
+
+        if (userRows[0].role === 'admin') {
+            const { rows: adminRows } = await query(
+                `SELECT COUNT(*)::int AS total_admins
+                 FROM users
+                 WHERE role = 'admin'`,
+                []
+            );
+
+            if ((adminRows[0]?.total_admins || 0) <= 1) {
+                return reply.code(400).send({ error: 'Нельзя удалить последнего администратора.' });
+            }
+        }
+
+        const { rowCount } = await query(
+            'DELETE FROM users WHERE id = $1',
+            [id]
+        );
 
         return { ok: true };
     });
@@ -244,7 +317,7 @@ export default async function adminUsersRoutes(fastify, options) {
                             properties: {
                                 username: { type: 'string' },
                                 full_name: { type: ['string', 'null'] },
-                                role: { type: 'string', enum: ['admin', 'respondent'] },
+                                role: { type: 'string', enum: ['admin', 'auditor', 'respondent'] },
                                 department_name: { type: ['string', 'null'] },
                                 profession_name: { type: ['string', 'null'] }
                             },
@@ -297,7 +370,7 @@ export default async function adminUsersRoutes(fastify, options) {
                     }
                 }
 
-                const safeRole = u.role === 'admin' ? 'admin' : 'respondent';
+                const safeRole = u.role === 'admin' || u.role === 'auditor' ? u.role : 'respondent';
                 const tempPassword = Math.random().toString(36).slice(-10) + 'X9!';
                 const passwordHash = await bcrypt.hash(tempPassword, 10);
 

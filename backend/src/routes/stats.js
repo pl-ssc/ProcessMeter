@@ -1,14 +1,7 @@
 import pool from '../db/index.js';
 
 export default async function statsRoutes(fastify, options) {
-    fastify.get('/dashboard', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-        const { role } = request.user;
-
-        // Only admins and auditors can see stats
-        if (role !== 'admin' && role !== 'auditor') {
-            return reply.code(403).send({ error: 'Access denied' });
-        }
-
+    fastify.get('/dashboard', { preHandler: [fastify.authenticate, fastify.requireAnalyticsRole] }, async (request, reply) => {
         try {
             // 1. Progress
             const { rows: progressRows } = await pool.query('SELECT * FROM view_stats_survey_progress');

@@ -1,162 +1,99 @@
 import React, { useState } from 'react';
-import { Send, Clock, Briefcase, Activity, Info } from 'lucide-react';
+import { Activity, BriefcaseBusiness, Clock3, Info, Send } from 'lucide-react';
+import { Badge } from './ui/badge.jsx';
+import { Button } from './ui/button.jsx';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from './ui/dialog.jsx';
 
-export default function InfoPanel({ stats, onSubmit, hasChanges, isDark }) {
-    const { total_hours = 0, fte = 0, status = 'not_started' } = stats;
-    const [showHelp, setShowHelp] = useState(false);
+export default function InfoPanel({ stats, onSubmit, hasChanges, isSubmitted }) {
+  const { total_hours = 0, fte = 0, status = 'not_started' } = stats;
+  const [showHelp, setShowHelp] = useState(false);
 
-    const getFteColor = () => {
-        const numericFte = Number(fte);
-        if (Number.isNaN(numericFte)) return '#9ca3af';
-        if (numericFte < 0.8) return '#3b82f6'; // blue
-        if (numericFte <= 1.2) return '#10b981'; // green
-        return '#ef4444'; // red
-    };
+  const fteNumber = Number(fte);
+  const fteVariant = Number.isNaN(fteNumber) ? 'secondary' : fteNumber < 0.8 ? 'default' : fteNumber <= 1.2 ? 'success' : 'destructive';
+  const statusMap = {
+    completed: { label: 'Завершено', variant: 'success' },
+    in_progress: { label: 'В работе', variant: 'default' },
+    not_started: { label: 'Не начата', variant: 'secondary' },
+  };
+  const statusUi = statusMap[status] || statusMap.not_started;
 
-    const getStatusColor = () => {
-        switch (status) {
-            case 'completed': return '#10b981'; // green
-            case 'in_progress': return '#3b82f6'; // blue
-            default: return '#9ca3af'; // gray
-        }
-    };
-
-    const getStatusText = () => {
-        switch (status) {
-            case 'completed': return 'Завершено';
-            case 'in_progress': return 'В работе';
-            default: return 'Не начата';
-        }
-    };
-
-    return (
-        <div className={`info-panel ${isDark ? 'dark' : ''}`} style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '12px 24px',
-            backgroundColor: isDark ? '#1f2937' : '#f3f4f6',
-            borderBottom: `1px solid ${isDark ? '#374151' : '#e5e7eb'}`,
-            gap: '24px'
-        }}>
-            <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
-                <div className="stat-item" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Clock size={18} className="text-muted" />
-                    <span className="text-sm text-muted">Трудозатраты:</span>
-                    <span className="font-medium" style={{ fontSize: '1.1rem' }}>{total_hours} ч.</span>
-                </div>
-
-                <div className="stat-item" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Briefcase size={18} style={{ color: getFteColor() }} />
-                    <span className="text-sm text-muted">FTE:</span>
-                    <span className="font-medium" style={{ fontSize: '1.1rem', color: getFteColor() }}>{fte}</span>
-                </div>
-
-                <div className="stat-item" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Activity size={18} style={{ color: getStatusColor() }} />
-                    <span className="text-sm text-muted">Статус:</span>
-                    <span className="font-medium" style={{ color: getStatusColor() }}>
-                        {getStatusText()}
-                    </span>
-                </div>
-
-                <button
-                    type="button"
-                    onClick={() => setShowHelp(true)}
-                    style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        padding: '6px 10px',
-                        borderRadius: 999,
-                        border: `1px solid ${isDark ? '#374151' : '#e5e7eb'}`,
-                        background: isDark ? '#111827' : '#ffffff',
-                        color: isDark ? '#e2e8f0' : '#0f172a',
-                        cursor: 'pointer',
-                        fontSize: 12,
-                        whiteSpace: 'nowrap'
-                    }}
-                >
-                    <Info size={14} />
-                    Инструкция
-                </button>
+  return (
+    <>
+      <div className="sticky top-0 z-30 border-b bg-[hsl(var(--background)/0.88)] px-6 py-3 backdrop-blur-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-2.5">
+            <div className="flex items-center gap-2 rounded-full border border-slate-200/80 bg-card/90 px-3 py-2 shadow-none dark:border-slate-800">
+              <div className="rounded-full bg-primary/10 p-1.5 text-primary">
+                <Clock3 className="h-3.5 w-3.5" />
+              </div>
+              <div className="text-sm text-muted-foreground">Трудозатраты:</div>
+              <div className="text-base font-semibold">{total_hours} ч.</div>
             </div>
-
-            <button
-                className="primary"
-                onClick={onSubmit}
-                disabled={(status === 'completed' && !hasChanges) || Number(total_hours) === 0}
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '8px 16px',
-                    backgroundColor: status === 'completed' ? '#10b981' : undefined
-                }}
-            >
-                <Send size={16} />
-                {status === 'completed' ? 'Завершено' : 'Завершить ввод данных'}
-            </button>
-
-            {showHelp && (
-                <div
-                    style={{
-                        position: 'fixed',
-                        inset: 0,
-                        background: 'rgba(15, 23, 42, 0.5)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 50
-                    }}
-                    onClick={() => setShowHelp(false)}
-                >
-                    <div
-                        style={{
-                            width: 'min(520px, 90vw)',
-                            background: isDark ? '#0f172a' : '#ffffff',
-                            color: isDark ? '#e2e8f0' : '#0f172a',
-                            borderRadius: 12,
-                            padding: '18px 20px',
-                            border: `1px solid ${isDark ? '#334155' : '#e5e7eb'}`,
-                            boxShadow: isDark
-                                ? '0 20px 40px rgba(0, 0, 0, 0.45)'
-                                : '0 20px 40px rgba(15, 23, 42, 0.18)'
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: 10 }}>
-                            <Info size={16} />
-                            <strong>Как заполнить опросник</strong>
-                        </div>
-                        <div style={{ fontSize: 14, lineHeight: 1.5 }}>
-                            1. В каждой строке укажите примерные трудозатраты по операции в месяц в человеко-часах.
-                            <br />
-                            2. Выберите ИТ-систему из списка, если она используется (можно оставить пустым).
-                            <br />
-                            3. В примечании кратко опишите допущения, редкие случаи или важные детали.
-                            <br />
-                            4. Когда все строки заполнены, нажмите «Завершить ввод данных».
-                        </div>
-                        <div style={{ marginTop: 14, textAlign: 'right' }}>
-                            <button
-                                type="button"
-                                onClick={() => setShowHelp(false)}
-                                style={{
-                                    padding: '6px 12px',
-                                    borderRadius: 8,
-                                    border: `1px solid ${isDark ? '#374151' : '#e5e7eb'}`,
-                                    background: isDark ? '#111827' : '#f8fafc',
-                                    color: isDark ? '#e2e8f0' : '#0f172a',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                Закрыть
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <div className="flex items-center gap-2 rounded-full border border-slate-200/80 bg-card/90 px-3 py-2 shadow-none dark:border-slate-800">
+              <div className="rounded-full bg-accent/10 p-1.5 text-accent">
+                <BriefcaseBusiness className="h-3.5 w-3.5" />
+              </div>
+              <div className="text-sm text-muted-foreground">FTE:</div>
+              <div className="text-base font-semibold">{fte}</div>
+              <Badge variant={fteVariant} className="px-2 py-0 text-[11px]">
+                {Number.isNaN(fteNumber) ? '—' : fteNumber.toFixed(2)}
+              </Badge>
+            </div>
+            <div className="flex items-center gap-2 rounded-full border border-slate-200/80 bg-card/90 px-3 py-2 shadow-none dark:border-slate-800">
+              <div className="rounded-full bg-secondary p-1.5 text-foreground">
+                <Activity className="h-3.5 w-3.5" />
+              </div>
+              <div className="text-sm text-muted-foreground">Статус:</div>
+              <Badge variant={statusUi.variant} className="px-2 py-0 text-[11px]">
+                {statusUi.label}
+              </Badge>
+            </div>
+            <Badge variant={isSubmitted ? 'success' : 'secondary'} className="px-3 py-1 text-[11px]">
+              {isSubmitted ? 'Только чтение' : 'Редактирование'}
+            </Badge>
+            <Badge variant={hasChanges ? 'warning' : 'secondary'} className="px-3 py-1 text-[11px]">
+              {hasChanges ? 'Есть несохраненные' : 'Все синхронизировано'}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" className="h-10 rounded-full border-slate-200 bg-card/90 px-4 text-sm shadow-none" onClick={() => setShowHelp(true)}>
+              <Info className="h-4 w-4" />
+              Инструкция
+            </Button>
+            <Button className="h-10 rounded-full px-4 text-sm" onClick={onSubmit} disabled={(status === 'completed' && !hasChanges) || Number(total_hours) === 0}>
+              <Send className="h-4 w-4" />
+              {status === 'completed' ? 'Завершено' : 'Завершить ввод данных'}
+            </Button>
+          </div>
         </div>
-    );
+      </div>
+
+      <Dialog open={showHelp} onOpenChange={setShowHelp}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Как заполнить опросник</DialogTitle>
+            <DialogDescription>Короткая памятка перед финальной отправкой.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 text-sm text-muted-foreground">
+            <p>1. В каждой строке укажите примерные трудозатраты по операции в месяц в человеко-часах.</p>
+            <p>2. Выберите ИТ-систему из списка, если она используется. Поле можно оставить пустым.</p>
+            <p>3. В примечании зафиксируйте допущения, редкие случаи или важные детали.</p>
+            <p>4. Когда всё заполнено, нажмите «Завершить ввод данных».</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowHelp(false)}>
+              Закрыть
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 }

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert';
-import { buildTestApp, clearDB, createTestUser, closeResources } from './setup.js';
+import { buildTestApp, clearDB, createTestUser, closeResources, getAuthCookie } from './setup.js';
 import bcrypt from 'bcryptjs';
 
 test('Auth & Security API', async (t) => {
@@ -77,16 +77,46 @@ test('Auth & Security API', async (t) => {
 
     await t.test('Role Guards - respondent cannot access admin routes', async () => {
         const user = await createTestUser({ email: 'resp@example.com', password: 'password123', role: 'respondent' });
-        const tokenToken = app.jwt.sign({ sub: user.id, role: user.role });
+        const tokenToken = await getAuthCookie(app, user);
 
         const response = await app.inject({
             method: 'GET',
             url: '/api/admin/users',
             headers: {
-                cookie: `pm_token=${tokenToken}`
+                cookie: tokenToken
             }
         });
 
         assert.strictEqual(response.statusCode, 403, 'Respondent cannot access admin routes');
+    });
+
+    await t.test('Role Guards - analyst can access analytics routes', async () => {
+        const analyst = await createTestUser({ email: 'analyst@example.com', password: 'password123', role: 'auditor' });
+        const authCookie = await getAuthCookie(app, analyst);
+
+        const response = await app.inject({
+            method: 'GET',
+            url: '/api/analytics/meta',
+            headers: {
+                cookie: authCookie
+            }
+        });
+
+        assert.strictEqual(response.statusCode, 200, 'Analyst should access analytics routes');
+    });
+
+    await t.test('Role Guards - respondent cannot access analytics routes', async () => {
+        const respondent = await createTestUser({ email: 'resp-analytics@example.com', password: 'password123', role: 'respondent' });
+        const authCookie = await getAuthCookie(app, respondent);
+
+        const response = await app.inject({
+            method: 'GET',
+            url: '/api/analytics/meta',
+            headers: {
+                cookie: authCookie
+            }
+        });
+
+        assert.strictEqual(response.statusCode, 403, 'Respondent cannot access analytics routes');
     });
 });

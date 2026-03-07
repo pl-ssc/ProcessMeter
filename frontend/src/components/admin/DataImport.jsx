@@ -1,103 +1,122 @@
 import React, { useState } from 'react';
+import { AlertTriangle, CheckCircle2, Database, Play, RefreshCw } from 'lucide-react';
 import { apiFetch } from '../../api.js';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert.jsx';
 import {
-    RefreshCw,
-    AlertTriangle,
-    CheckCircle2,
-    Database,
-    Play
-} from 'lucide-react';
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../ui/alert-dialog.jsx';
+import { Button } from '../ui/button.jsx';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card.jsx';
+import { Input } from '../ui/input.jsx';
+import { Label } from '../ui/label.jsx';
 
 export default function DataImport() {
-    const [loading, setLoading] = useState(false);
-    const [status, setStatus] = useState('idle'); // idle, loading, success, error
-    const [message, setMessage] = useState('');
-    const [connString, setConnString] = useState('postgresql://postgres:postgres@127.0.0.1:5433/refdb');
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState('idle');
+  const [message, setMessage] = useState('');
+  const [connString, setConnString] = useState('postgresql://postgres:postgres@127.0.0.1:5433/refdb');
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
-    const handleImport = async () => {
-        if (!window.confirm('ВНИМАНИЕ: При импорте будут ОЧИЩЕНЫ все текущие справочники и ответы пользователей. Права доступа пользователей будут сохранены. Продолжить?')) {
-            return;
-        }
+  const handleImport = async () => {
+    setLoading(true);
+    setStatus('loading');
+    setMessage('Запуск миграции данных из эталонной базы...');
 
-        setLoading(true);
-        setStatus('loading');
-        setMessage('Запуск миграции данных из эталонной базы...');
+    try {
+      await apiFetch('/api/admin/import', {
+        method: 'POST',
+        body: JSON.stringify({ connectionString: connString }),
+      });
+      setStatus('success');
+      setMessage('Миграция успешно завершена. Данные обновлены.');
+    } catch (error) {
+      setStatus('error');
+      setMessage(`Ошибка миграции: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        try {
-            await apiFetch('/api/admin/import', {
-                method: 'POST',
-                body: JSON.stringify({ connectionString: connString })
-            });
-            setStatus('success');
-            setMessage('Миграция успешно завершена! Данные обновлены.');
-        } catch (err) {
-            setStatus('error');
-            setMessage(`Ошибка миграции: ${err.message}`);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <div className="data-import-page">
-            <div className="admin-card import-card">
-                <div className="card-header">
-                    <Database size={24} className="text-accent" />
-                    <div>
-                        <h2>Импорт из эталонной базы</h2>
-                        <p className="text-muted">Синхронизация справочников и процессов (1-4 уровни).</p>
-                    </div>
-                </div>
-
-                <div className="card-body">
-                    <div className="warning-banner">
-                        <AlertTriangle size={20} />
-                        <div>
-                            <strong>Важное предупреждение</strong>
-                            <p>Импорт полностью перезаписывает таблицы процессов. Все несохраненные анкеты респондентов будут удалены и созданы заново на основе новой структуры.</p>
-                        </div>
-                    </div>
-
-                    <label className="form-label">
-                        Строка подключения (Source Database)
-                        <input
-                            type="text"
-                            className="input-full"
-                            value={connString}
-                            onChange={(e) => setConnString(e.target.value)}
-                            disabled={loading}
-                        />
-                    </label>
-
-                    <div className="import-actions">
-                        <button
-                            className="primary large-btn"
-                            onClick={handleImport}
-                            disabled={loading}
-                        >
-                            {loading ? <RefreshCw size={20} className="animate-spin" /> : <Play size={20} />}
-                            {loading ? 'Синхронизация...' : 'Запустить импорт данных'}
-                        </button>
-                    </div>
-
-                    {status !== 'idle' && (
-                        <div className={`status-message ${status}`}>
-                            {status === 'success' && <CheckCircle2 size={20} />}
-                            {status === 'error' && <AlertTriangle size={20} />}
-                            <span>{message}</span>
-                        </div>
-                    )}
-                </div>
+  return (
+    <div className="grid gap-6 xl:grid-cols-[1.4fr_0.9fr]">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-3">
+            <div className="rounded-xl bg-primary/10 p-2 text-primary">
+              <Database className="h-5 w-5" />
             </div>
+            Импорт из эталонной базы
+          </CardTitle>
+          <CardDescription>Синхронизация справочников и процессов 1-4 уровней.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <Alert variant="warning">
+            <AlertTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4" />
+              Важное предупреждение
+            </AlertTitle>
+            <AlertDescription>Импорт полностью перезаписывает таблицы процессов. Все несохранённые анкеты респондентов будут удалены и созданы заново на основе новой структуры.</AlertDescription>
+          </Alert>
 
-            <div className="admin-card info-card">
-                <h3>Зачем это нужно?</h3>
-                <ul>
-                    <li>Обновление списка процессов и операций.</li>
-                    <li>Добавление новых систем и исполнителей.</li>
-                    <li>Сброс всех ответов к исходному состоянию после изменения эталона.</li>
-                </ul>
-            </div>
-        </div>
-    );
+          <div className="space-y-2">
+            <Label>Строка подключения</Label>
+            <Input value={connString} onChange={(event) => setConnString(event.target.value)} disabled={loading} />
+          </div>
+
+          <Button onClick={() => setConfirmOpen(true)} disabled={loading}>
+            {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+            {loading ? 'Синхронизация...' : 'Запустить импорт данных'}
+          </Button>
+
+          {status !== 'idle' ? (
+            <Alert variant={status === 'success' ? 'success' : status === 'error' ? 'destructive' : 'default'}>
+              <AlertTitle className="flex items-center gap-2">
+                {status === 'success' ? <CheckCircle2 className="h-4 w-4" /> : null}
+                {status === 'error' ? <AlertTriangle className="h-4 w-4" /> : null}
+                Статус
+              </AlertTitle>
+              <AlertDescription>{message}</AlertDescription>
+            </Alert>
+          ) : null}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Зачем это нужно</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm text-muted-foreground">
+          <p>Обновление списка процессов и операций.</p>
+          <p>Добавление новых систем и исполнителей.</p>
+          <p>Сброс ответов к исходному состоянию после изменения эталона.</p>
+        </CardContent>
+      </Card>
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Запустить импорт?</AlertDialogTitle>
+            <AlertDialogDescription>Будут очищены текущие справочники и ответы пользователей. Права доступа пользователей сохранятся.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setConfirmOpen(false);
+                handleImport();
+              }}
+            >
+              Запустить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
 }

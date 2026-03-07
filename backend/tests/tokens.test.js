@@ -75,6 +75,14 @@ test('Password Recovery & Tokens API', async (t) => {
 
     await t.test('POST /api/auth/set-password - Success', async () => {
         const user = await createTestUser({ email: 'set@example.com', password: 'oldpassword' });
+        const loginResponseBeforeReset = await app.inject({
+            method: 'POST',
+            url: '/api/auth/login',
+            payload: { username: 'set@example.com', password: 'oldpassword' }
+        });
+        const oldSessionCookie = Array.isArray(loginResponseBeforeReset.headers['set-cookie'])
+            ? loginResponseBeforeReset.headers['set-cookie'][0]
+            : loginResponseBeforeReset.headers['set-cookie'];
         const tokenStr = await createToken(user.id, 'reset');
 
         const response = await app.inject({
@@ -96,6 +104,13 @@ test('Password Recovery & Tokens API', async (t) => {
             payload: { username: 'set@example.com', password: 'new_strong_password' }
         });
         assert.strictEqual(loginResponse.statusCode, 200, 'Should be able to login with new password');
+
+        const oldSessionCheck = await app.inject({
+            method: 'GET',
+            url: '/api/auth/me',
+            headers: { cookie: oldSessionCookie }
+        });
+        assert.strictEqual(oldSessionCheck.statusCode, 401, 'Old session should be invalidated after password reset');
     });
 
     await t.test('POST /api/auth/set-password - Whitespace password', async () => {
