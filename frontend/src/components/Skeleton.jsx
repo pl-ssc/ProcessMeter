@@ -1,37 +1,38 @@
 import React from 'react';
-import './Skeleton.css';
+import { Skeleton as UiSkeleton } from './ui/skeleton.jsx';
 
 export function SkeletonText({ width = '100%', height = '1em', className = '' }) {
-    return <div className={`pm-skeleton pm-skeleton-text ${className}`} style={{ width, height }} />;
+  return <UiSkeleton className={className} style={{ width, height }} />;
 }
 
 export function SkeletonBlock({ width = '100%', height = '100%', className = '' }) {
-    return <div className={`pm-skeleton ${className}`} style={{ width, height, borderRadius: '8px' }} />;
+  return <UiSkeleton className={className} style={{ width, height }} />;
 }
 
 export function AppSkeleton() {
-    return (
-        <div className="app">
-            <header className="app-header">
-                <SkeletonText width="150px" height="24px" />
-                <div style={{ display: 'flex', gap: '10px' }}>
-                    <SkeletonText width="100px" height="20px" />
-                    <SkeletonText width="80px" height="30px" />
-                </div>
-            </header>
-            <div className="respondent-layout" style={{ gridTemplateColumns: '25% 4px 1fr' }}>
-                <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                    <SkeletonText width="80%" height="20px" />
-                    <SkeletonText width="90%" height="20px" />
-                    <SkeletonText width="60%" height="20px" />
-                    <SkeletonText width="70%" height="20px" />
-                    <SkeletonText width="85%" height="20px" />
-                </div>
-                <div className="resizer" />
-                <div style={{ padding: '20px' }}>
-                    <SkeletonBlock width="100%" height="100%" />
-                </div>
-            </div>
+  return (
+    <div className="flex h-full flex-col">
+      <div className="border-b bg-card px-6 py-4">
+        <div className="flex items-center justify-between">
+          <UiSkeleton className="h-12 w-64 rounded-2xl" />
+          <div className="flex gap-3">
+            <UiSkeleton className="h-10 w-24 rounded-full" />
+            <UiSkeleton className="h-10 w-10 rounded-full" />
+            <UiSkeleton className="h-10 w-10 rounded-full" />
+          </div>
         </div>
-    );
+      </div>
+      <div className="border-b px-6 py-4">
+        <div className="grid gap-3 md:grid-cols-3">
+          <UiSkeleton className="h-20 rounded-2xl" />
+          <UiSkeleton className="h-20 rounded-2xl" />
+          <UiSkeleton className="h-20 rounded-2xl" />
+        </div>
+      </div>
+      <div className="grid min-h-0 flex-1 grid-cols-[320px_1fr] gap-4 p-6">
+        <UiSkeleton className="rounded-3xl" />
+        <UiSkeleton className="rounded-3xl" />
+      </div>
+    </div>
+  );
 }

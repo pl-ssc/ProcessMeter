@@ -1,307 +1,386 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { apiFetch } from '../../api.js';
-import {
-    UserPlus,
-    Search,
-    UserCheck,
-    UserMinus,
-    Key,
-    Edit,
-    Mail,
-    Loader2,
-    Upload
-} from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Edit, Ellipsis, Info, KeyRound, Loader2, Mail, Search, Trash2, Upload, UserCheck, UserMinus, UserPlus } from 'lucide-react';
 import * as XLSX from 'xlsx';
-
+import { apiFetch } from '../../api.js';
+import { Alert, AlertDescription } from '../ui/alert.jsx';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog.jsx';
+import { Badge } from '../ui/badge.jsx';
+import { Button } from '../ui/button.jsx';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card.jsx';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu.jsx';
+import { Input } from '../ui/input.jsx';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select.jsx';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table.jsx';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip.jsx';
 import UserForm from './UserForm.jsx';
 
 const TOAST_DURATION_MS = 4000;
 
 export default function UserManagement() {
-    const [users, setUsers] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [roleFilter, setRoleFilter] = useState('all');
-    const [showForm, setShowForm] = useState(false);
-    const [editingUser, setEditingUser] = useState(null);
-    const [actionLoading, setActionLoading] = useState({}); // { [userId_type]: true }
-    const [toast, setToast] = useState(null); // { type: 'success'|'error', msg }
-    const fileInputRef = useRef(null);
-    const [isImporting, setIsImporting] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [showForm, setShowForm] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [actionLoading, setActionLoading] = useState({});
+  const [toast, setToast] = useState(null);
+  const fileInputRef = useRef(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
 
-    useEffect(() => {
-        loadUsers();
-    }, [searchTerm, roleFilter]);
+  useEffect(() => {
+    loadUsers();
+  }, [searchTerm, roleFilter]);
 
-    const loadUsers = async () => {
-        setLoading(true);
-        try {
-            let url = `/api/admin/users?include_admins=true`;
-            if (searchTerm) url += `&search=${encodeURIComponent(searchTerm)}`;
-            if (roleFilter !== 'all') url += `&role=${roleFilter}`;
+  const loadUsers = async () => {
+    setLoading(true);
+    try {
+      let url = '/api/admin/users?include_admins=true';
+      if (searchTerm) url += `&search=${encodeURIComponent(searchTerm)}`;
+      if (roleFilter !== 'all') url += `&role=${roleFilter}`;
+      const response = await apiFetch(url);
+      setUsers(response.users || []);
+    } catch (error) {
+      console.error('Failed to load users:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            const res = await apiFetch(url);
-            setUsers(res.users || []);
-        } catch (err) {
-            console.error('Failed to load users:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
+  const showToast = (type, message) => {
+    setToast({ type, message });
+    window.setTimeout(() => setToast(null), TOAST_DURATION_MS);
+  };
 
-    const toggleUserStatus = async (user) => {
-        try {
-            await apiFetch(`/api/admin/users/${user.id}/status`, {
-                method: 'POST',
-                body: JSON.stringify({ is_active: !user.is_active })
-            });
-            loadUsers();
-        } catch (err) {
-            alert(`Ошибка: ${err.message}`);
-        }
-    };
+  const handleFormSuccess = (result) => {
+    const wasEdit = !!editingUser;
+    setShowForm(false);
+    setEditingUser(null);
+    loadUsers();
 
-    const showToast = (type, msg) => {
-        setToast({ type, msg });
-        setTimeout(() => setToast(null), TOAST_DURATION_MS);
-    };
+    if (!wasEdit && result?.invite_sent === false) {
+      showToast('error', result.invite_error || 'Пользователь создан, но приглашение не отправлено.');
+      return;
+    }
 
-    const sendEmail = async (userId, action) => {
-        const key = `${userId}_${action}`;
-        setActionLoading(prev => ({ ...prev, [key]: true }));
-        try {
-            await apiFetch(`/api/admin/users/${userId}/${action}`, { method: 'POST' });
-            showToast('success', action === 'send-invite'
-                ? 'Приглашение отправлено!'
-                : 'Ссылка для сброса пароля отправлена!');
-        } catch (err) {
-            showToast('error', err.message);
-        } finally {
-            setActionLoading(prev => ({ ...prev, [key]: false }));
-        }
-    };
+    if (!wasEdit && result?.invite_sent === true) {
+      showToast('success', 'Пользователь создан, приглашение отправлено!');
+      return;
+    }
 
-    const handleFileUpload = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+    showToast('success', wasEdit ? 'Пользователь обновлен.' : 'Пользователь сохранен.');
+  };
 
-        setIsImporting(true);
-        try {
-            const buffer = await file.arrayBuffer();
-            const wb = XLSX.read(buffer, { type: 'array' });
-            const ws = wb.Sheets[wb.SheetNames[0]];
-            const rawData = XLSX.utils.sheet_to_json(ws);
+  const toggleUserStatus = async (user) => {
+    try {
+      await apiFetch(`/api/admin/users/${user.id}/status`, {
+        method: 'POST',
+        body: JSON.stringify({ is_active: !user.is_active }),
+      });
+      loadUsers();
+    } catch (error) {
+      showToast('error', `Ошибка: ${error.message}`);
+    }
+  };
 
-            const usersPayload = rawData.map(row => {
-                const getVal = (keys) => {
-                    for (let k of keys) {
-                        if (row[k] !== undefined) return String(row[k]).trim();
-                    }
-                    return null;
-                };
+  const sendEmail = async (userId, action) => {
+    const key = `${userId}_${action}`;
+    setActionLoading((previous) => ({ ...previous, [key]: true }));
+    try {
+      await apiFetch(`/api/admin/users/${userId}/${action}`, { method: 'POST' });
+      showToast('success', action === 'send-invite' ? 'Приглашение отправлено!' : 'Ссылка для сброса пароля отправлена!');
+    } catch (error) {
+      showToast('error', error.message);
+    } finally {
+      setActionLoading((previous) => ({ ...previous, [key]: false }));
+    }
+  };
 
-                const username = getVal(['Email', 'Почта', 'username', 'email']);
-                const full_name = getVal(['ФИО', 'Имя', 'Имя пользователя', 'full_name']);
-                const roleRaw = getVal(['Роль', 'role']);
-                const role = (roleRaw && roleRaw.toLowerCase() === 'администратор') ? 'admin' : 'respondent';
-                const department_name = getVal(['Подразделение', 'Отдел', 'department_name', 'department']);
-                const profession_name = getVal(['Профессия', 'Должность', 'profession_name', 'profession']);
+  const deleteUser = async () => {
+    if (!userToDelete) return;
 
-                return { username, full_name, role, department_name, profession_name };
-            }).filter(u => u.username);
+    const key = `${userToDelete.id}_delete`;
+    setActionLoading((previous) => ({ ...previous, [key]: true }));
+    try {
+      await apiFetch(`/api/admin/users/${userToDelete.id}`, { method: 'DELETE' });
+      setUserToDelete(null);
+      showToast('success', 'Пользователь удален.');
+      loadUsers();
+    } catch (error) {
+      showToast('error', error.message);
+    } finally {
+      setActionLoading((previous) => ({ ...previous, [key]: false }));
+    }
+  };
 
-            if (usersPayload.length === 0) {
-                showToast('error', 'Не найдено пользователей с колонкой Email/Почта');
-                setIsImporting(false);
-                return;
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    setIsImporting(true);
+    try {
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: 'array' });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rawData = XLSX.utils.sheet_to_json(worksheet);
+
+      const usersPayload = rawData
+        .map((row) => {
+          const getVal = (keys) => {
+            for (const key of keys) {
+              if (row[key] !== undefined) return String(row[key]).trim();
             }
+            return null;
+          };
 
-            const res = await apiFetch('/api/admin/users/bulk-import', {
-                method: 'POST',
-                body: JSON.stringify({ users: usersPayload })
-            });
+          const username = getVal(['Email', 'Почта', 'username', 'email']);
+          const full_name = getVal(['ФИО', 'Имя', 'Имя пользователя', 'full_name']);
+          const roleRaw = getVal(['Роль', 'role']);
+          const normalizedRole = roleRaw?.toLowerCase();
+          const role = normalizedRole === 'администратор'
+            ? 'admin'
+            : normalizedRole === 'аналитик' || normalizedRole === 'аудитор'
+              ? 'auditor'
+              : 'respondent';
+          const department_name = getVal(['Подразделение', 'Отдел', 'department_name', 'department']);
+          const profession_name = getVal(['Профессия', 'Должность', 'profession_name', 'profession']);
 
-            showToast('success', `Импорт завершен! Добавлено: ${res.imported}, пропущено (дубли): ${res.skipped}`);
-            loadUsers();
-        } catch (err) {
-            console.error(err);
-            showToast('error', `Ошибка импорта: ${err.message}`);
-        } finally {
-            setIsImporting(false);
-            if (fileInputRef.current) fileInputRef.current.value = '';
-        }
-    };
+          return { username, full_name, role, department_name, profession_name };
+        })
+        .filter((item) => item.username);
 
-    return (
-        <div className="user-management">
-            {toast && (
-                <div className={`toast-message ${toast.type}`}>
-                    {toast.msg}
-                </div>
-            )}
-            <div className="page-actions">
-                <div className="search-bar">
-                    <Search size={18} className="search-icon" />
-                    <input
-                        type="text"
-                        placeholder="Поиск по имени или email..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
+      if (usersPayload.length === 0) {
+        showToast('error', 'Не найдено пользователей с колонкой Email/Почта');
+        return;
+      }
 
-                <div className="filters">
-                    <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
-                        <option value="all">Все роли</option>
-                        <option value="admin">Администраторы</option>
-                        <option value="auditor">Аудиторы</option>
-                        <option value="respondent">Респонденты</option>
-                    </select>
-                </div>
+      const response = await apiFetch('/api/admin/users/bulk-import', {
+        method: 'POST',
+        body: JSON.stringify({ users: usersPayload }),
+      });
+      showToast('success', `Импорт завершен. Добавлено: ${response.imported}, пропущено: ${response.skipped}`);
+      loadUsers();
+    } catch (error) {
+      console.error(error);
+      showToast('error', `Ошибка импорта: ${error.message}`);
+    } finally {
+      setIsImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
-                <div style={{ display: 'flex', gap: '8px' }}>
-                    <input
-                        type="file"
-                        accept=".xlsx, .xls"
-                        ref={fileInputRef}
-                        style={{ display: 'none' }}
-                        onChange={handleFileUpload}
-                    />
-                    <button
-                        className="ghost"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isImporting}
-                    >
-                        {isImporting ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
-                        Импорт из Excel
-                    </button>
-                    <button className="primary" onClick={() => { setEditingUser(null); setShowForm(true); }}>
-                        <UserPlus size={18} />
-                        Добавить пользователя
-                    </button>
-                </div>
+  const roleLabel = (role) => (role === 'admin' ? 'Админ' : role === 'auditor' ? 'Аналитик' : 'Респондент');
+  const roleVariant = (role) => (role === 'admin' ? 'destructive' : role === 'auditor' ? 'warning' : 'default');
+  const getDeleteDisabledReason = (user) => {
+    if (user.can_delete === false && user.role === 'admin') {
+      return 'Нельзя удалить последнего администратора';
+    }
+
+    return null;
+  };
+  const HeaderHint = ({ label, hint }) => (
+    <Tooltip>
+      <div className="inline-flex items-center gap-1.5">
+        <span>{label}</span>
+        <TooltipTrigger asChild>
+          <button type="button" className="inline-flex cursor-help text-muted-foreground transition-colors hover:text-foreground" aria-label={`Подсказка: ${label}`}>
+            <Info className="h-3.5 w-3.5" />
+          </button>
+        </TooltipTrigger>
+      </div>
+      <TooltipContent>
+        {hint}
+      </TooltipContent>
+    </Tooltip>
+  );
+
+  return (
+    <TooltipProvider delayDuration={120}>
+      <div className="space-y-4">
+      {toast ? (
+        <Alert variant={toast.type === 'success' ? 'success' : 'destructive'}>
+          <AlertDescription>{toast.message}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      <Card>
+        <CardHeader className="gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <CardTitle>Пользователи</CardTitle>
+          <div className="flex flex-col gap-3 lg:flex-row">
+            <div className="relative min-w-[280px]">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input placeholder="Поиск по имени или email..." value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} className="pl-9" />
             </div>
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Все роли</SelectItem>
+                <SelectItem value="admin">Администраторы</SelectItem>
+                <SelectItem value="auditor">Аналитики</SelectItem>
+                <SelectItem value="respondent">Респонденты</SelectItem>
+              </SelectContent>
+            </Select>
+            <input ref={fileInputRef} type="file" accept=".xlsx, .xls" className="hidden" onChange={handleFileUpload} />
+            <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isImporting}>
+              {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              Импорт из Excel
+            </Button>
+            <Button onClick={() => { setEditingUser(null); setShowForm(true); }}>
+              <UserPlus className="h-4 w-4" />
+              Добавить пользователя
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="py-10 text-center text-sm text-muted-foreground">Загрузка пользователей...</div>
+          ) : (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>
+                      <HeaderHint
+                        label="Пользователь"
+                        hint="Цветная точка рядом с именем респондента: зеленая — опрос в процессе, оранжевая — опрос завершен."
+                      />
+                    </TableHead>
+                    <TableHead>
+                      <HeaderHint label="Роль" hint="Роль определяет набор прав в системе: администратор, аналитик или респондент." />
+                    </TableHead>
+                    <TableHead>
+                      <HeaderHint label="Подразделение" hint="Подразделение пользователя из справочника компании." />
+                    </TableHead>
+                    <TableHead>
+                      <HeaderHint label="Профессия" hint="Профессия или должность пользователя из справочника." />
+                    </TableHead>
+                    <TableHead>
+                      <HeaderHint label="Доступы" hint="Количество процессов 1 уровня, к которым у пользователя есть доступ." />
+                    </TableHead>
+                    <TableHead>
+                      <HeaderHint label="Статус" hint="Статус учетной записи: активен — может входить, заблокирован — вход запрещен." />
+                    </TableHead>
+                    <TableHead className="text-right">Действия</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary font-bold">
+                            {user.full_name?.charAt(0) || user.username.charAt(0)}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2 font-semibold">
+                              {user.full_name || 'Без имени'}
+                              {user.role === 'respondent' ? (
+                                <span className={`h-2.5 w-2.5 rounded-full ${user.is_survey_completed ? 'bg-orange-500' : 'bg-emerald-500'}`} />
+                              ) : null}
+                            </div>
+                            <div className="text-xs text-muted-foreground">{user.username}</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={roleVariant(user.role)}>{roleLabel(user.role)}</Badge>
+                      </TableCell>
+                      <TableCell>{user.department_name || '—'}</TableCell>
+                      <TableCell>{user.profession_name || '—'}</TableCell>
+                      <TableCell>{user.access_count} процессов</TableCell>
+                      <TableCell>
+                        <Badge variant={user.is_active ? 'success' : 'secondary'}>{user.is_active ? 'Активен' : 'Заблокирован'}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex justify-end">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="icon" className="h-9 w-9 rounded-xl">
+                                {actionLoading[`${user.id}_send-invite`] || actionLoading[`${user.id}_send-reset`] || actionLoading[`${user.id}_delete`]
+                                  ? <Loader2 className="h-4 w-4 animate-spin" />
+                                  : <Ellipsis className="h-4 w-4" />}
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-60">
+                              <DropdownMenuItem onClick={() => { setEditingUser(user); setShowForm(true); }}>
+                                <Edit className="h-4 w-4" />
+                                Редактировать
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => sendEmail(user.id, 'send-invite')}
+                                disabled={actionLoading[`${user.id}_send-invite`]}
+                              >
+                                <Mail className="h-4 w-4" />
+                                Отправить приглашение
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => sendEmail(user.id, 'send-reset')}
+                                disabled={actionLoading[`${user.id}_send-reset`]}
+                              >
+                                <KeyRound className="h-4 w-4" />
+                                Сбросить пароль
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => toggleUserStatus(user)}>
+                                {user.is_active ? <UserMinus className="h-4 w-4 text-destructive" /> : <UserCheck className="h-4 w-4 text-emerald-500" />}
+                                {user.is_active ? 'Заблокировать' : 'Разблокировать'}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                onClick={() => setUserToDelete(user)}
+                                disabled={actionLoading[`${user.id}_delete`] || user.can_delete === false}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                {getDeleteDisabledReason(user) || 'Удалить пользователя'}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {users.length === 0 ? <div className="py-8 text-center text-sm text-muted-foreground">Пользователи не найдены</div> : null}
+            </>
+          )}
+        </CardContent>
+      </Card>
 
-            {loading ? (
-                <div className="loading-state">Загрузка пользователей...</div>
-            ) : (
-                <div className="admin-card table-container">
-                    <table className="admin-table">
-                        <thead>
-                            <tr>
-                                <th>Пользователь</th>
-                                <th>Роль</th>
-                                <th>Подразделение</th>
-                                <th>Профессия</th>
-                                <th>Доступы</th>
-                                <th>Статус</th>
-                                <th>Действия</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {users.map(u => (
-                                <tr key={u.id}>
-                                    <td>
-                                        <div className="user-cell">
-                                            <div className="user-avatar">
-                                                {u.full_name?.charAt(0) || u.username.charAt(0)}
-                                            </div>
-                                            <div className="user-details">
-                                                <span className="user-name" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                    {u.full_name || 'Без имени'}
-                                                    {u.role === 'respondent' && (
-                                                        <span
-                                                            title={u.is_survey_completed ? 'Опрос завершен' : 'Опрос в процессе'}
-                                                            style={{
-                                                                width: 8,
-                                                                height: 8,
-                                                                borderRadius: '50%',
-                                                                backgroundColor: u.is_survey_completed ? '#f97316' : '#10b981',
-                                                                display: 'inline-block',
-                                                                flexShrink: 0
-                                                            }}
-                                                        />
-                                                    )}
-                                                </span>
-                                                <span className="user-email">{u.username}</span>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span className={`badge ${u.role}`}>
-                                            {u.role === 'admin' ? 'Админ' : u.role === 'auditor' ? 'Аудитор' : 'Респондент'}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span className="info-text">{u.department_name || '—'}</span>
-                                    </td>
-                                    <td>
-                                        <span className="info-text">{u.profession_name || '—'}</span>
-                                    </td>
-                                    <td>
-                                        <span className="access-count">
-                                            {u.access_count} процессов
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span className={`status-dot ${u.is_active ? 'active' : 'inactive'}`}></span>
-                                        {u.is_active ? 'Активен' : 'Заблокирован'}
-                                    </td>
-                                    <td>
-                                        <div className="table-actions">
-                                            <button
-                                                className="ghost icon-btn"
-                                                title="Редактировать"
-                                                onClick={() => { setEditingUser(u); setShowForm(true); }}
-                                            >
-                                                <Edit size={16} />
-                                            </button>
-                                            <button
-                                                className="ghost icon-btn"
-                                                title="Отправить приглашение"
-                                                onClick={() => sendEmail(u.id, 'send-invite')}
-                                                disabled={actionLoading[`${u.id}_send-invite`]}
-                                            >
-                                                {actionLoading[`${u.id}_send-invite`]
-                                                    ? <Loader2 size={16} className="animate-spin" />
-                                                    : <Mail size={16} />}
-                                            </button>
-                                            <button
-                                                className="ghost icon-btn"
-                                                title="Отправить сброс пароля"
-                                                onClick={() => sendEmail(u.id, 'send-reset')}
-                                                disabled={actionLoading[`${u.id}_send-reset`]}
-                                            >
-                                                {actionLoading[`${u.id}_send-reset`]
-                                                    ? <Loader2 size={16} className="animate-spin" />
-                                                    : <Key size={16} />}
-                                            </button>
-                                            <button
-                                                className="ghost icon-btn"
-                                                onClick={() => toggleUserStatus(u)}
-                                                title={u.is_active ? 'Заблокировать' : 'Разблокировать'}
-                                            >
-                                                {u.is_active ? <UserMinus size={16} color="#ef4444" /> : <UserCheck size={16} color="#10b981" />}
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                    {users.length === 0 && !loading && (
-                        <div className="empty-state">Пользователи не найдены</div>
-                    )}
-                </div>
-            )}
+      {showForm ? (
+        <UserForm
+          user={editingUser}
+          onClose={() => setShowForm(false)}
+          onSuccess={handleFormSuccess}
+        />
+      ) : null}
 
-            {showForm && (
-                <UserForm
-                    user={editingUser}
-                    onClose={() => setShowForm(false)}
-                    onSuccess={() => { setShowForm(false); loadUsers(); }}
-                />
-            )}
-        </div>
-    );
+      <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить пользователя?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {userToDelete
+                ? `Пользователь ${userToDelete.full_name || userToDelete.username} будет удален вместе с доступами, ответами и токенами восстановления. Это действие нельзя отменить.`
+                : 'Это действие нельзя отменить.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={!!(userToDelete && actionLoading[`${userToDelete.id}_delete`])}>
+              Отмена
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={deleteUser}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      </div>
+    </TooltipProvider>
+  );
 }

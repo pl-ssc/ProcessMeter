@@ -3,6 +3,19 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    chunkSizeWarningLimit: 1200,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('@glideapps')) return 'glide-grid';
+          if (id.includes('@radix-ui')) return 'radix-ui';
+          if (id.includes('xlsx')) return 'xlsx';
+          if (id.includes('react') || id.includes('scheduler')) return 'react-vendor';
+        },
+      },
+    },
+  },
   server: {
     port: 5173,
     proxy: {

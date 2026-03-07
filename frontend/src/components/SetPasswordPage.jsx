@@ -1,156 +1,153 @@
 import React, { useEffect, useState } from 'react';
+import { AlertTriangle, CheckCircle2, Eye, EyeOff, KeyRound, Loader2 } from 'lucide-react';
 import { apiFetch } from '../api.js';
-import { KeyRound, Eye, EyeOff, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from './ui/alert.jsx';
+import { Button } from './ui/button.jsx';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card.jsx';
+import { Input } from './ui/input.jsx';
+import { Label } from './ui/label.jsx';
 
 export default function SetPasswordPage({ token, onDone }) {
-    const [info, setInfo] = useState(null);      // { valid, type, full_name }
-    const [password, setPassword] = useState('');
-    const [confirm, setConfirm] = useState('');
-    const [showPass, setShowPass] = useState(false);
-    const [status, setStatus] = useState('idle'); // idle | loading | success | error
-    const [error, setError] = useState('');
+  const [info, setInfo] = useState(null);
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [showPass, setShowPass] = useState(false);
+  const [status, setStatus] = useState('idle');
+  const [error, setError] = useState('');
 
-    useEffect(() => {
-        apiFetch(`/api/auth/token-info?token=${encodeURIComponent(token)}`)
-            .then(setInfo)
-            .catch(() => setInfo({ valid: false, error: 'Ошибка проверки ссылки.' }));
-    }, [token]);
+  useEffect(() => {
+    apiFetch(`/api/auth/token-info?token=${encodeURIComponent(token)}`)
+      .then(setInfo)
+      .catch(() => setInfo({ valid: false, error: 'Ошибка проверки ссылки.' }));
+  }, [token]);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (password !== confirm) {
-            setError('Пароли не совпадают.');
-            return;
-        }
-        if (password.length < 6) {
-            setError('Пароль должен содержать не менее 6 символов.');
-            return;
-        }
-        setStatus('loading');
-        setError('');
-        try {
-            await apiFetch('/api/auth/set-password', {
-                method: 'POST',
-                body: JSON.stringify({ token, password })
-            });
-            setStatus('success');
-        } catch (err) {
-            setError(err.message);
-            setStatus('idle');
-        }
-    };
-
-    const typeLabel = info?.type === 'invite' ? 'Установка пароля' : 'Сброс пароля';
-
-    if (!info) {
-        return (
-            <div className="login-page">
-                <div className="login-card">
-                    <Loader2 size={32} className="animate-spin text-accent" style={{ margin: '0 auto', display: 'block' }} />
-                    <p style={{ textAlign: 'center', marginTop: '1rem', color: 'var(--text-muted)' }}>
-                        Проверяем ссылку...
-                    </p>
-                </div>
-            </div>
-        );
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (password !== confirm) {
+      setError('Пароли не совпадают.');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Пароль должен содержать не менее 6 символов.');
+      return;
     }
 
-    if (!info.valid) {
-        return (
-            <div className="login-page">
-                <div className="login-card">
-                    <div style={{ textAlign: 'center' }}>
-                        <AlertTriangle size={40} style={{ color: '#fa5252', margin: '0 auto 1rem' }} />
-                        <h2>Ссылка недействительна</h2>
-                        <p style={{ color: 'var(--text-muted)', margin: '0.5rem 0 1.5rem' }}>
-                            {info.error || 'Срок действия ссылки истёк или она уже была использована.'}
-                        </p>
-                        <button className="primary" onClick={onDone}>Перейти ко входу</button>
-                    </div>
-                </div>
-            </div>
-        );
+    setStatus('loading');
+    setError('');
+
+    try {
+      await apiFetch('/api/auth/set-password', {
+        method: 'POST',
+        body: JSON.stringify({ token, password }),
+      });
+      setStatus('success');
+    } catch (requestError) {
+      setError(requestError.message);
+      setStatus('idle');
     }
+  };
 
-    if (status === 'success') {
-        return (
-            <div className="login-page">
-                <div className="login-card">
-                    <div style={{ textAlign: 'center' }}>
-                        <CheckCircle2 size={40} style={{ color: 'var(--accent-highlight)', margin: '0 auto 1rem' }} />
-                        <h2>Пароль установлен!</h2>
-                        <p style={{ color: 'var(--text-muted)', margin: '0.5rem 0 1.5rem' }}>
-                            Теперь вы можете войти в систему.
-                        </p>
-                        <button className="primary" onClick={onDone}>Войти</button>
-                    </div>
-                </div>
+  const typeLabel = info?.type === 'invite' ? 'Установка пароля' : 'Сброс пароля';
+
+  return (
+    <div className="flex min-h-screen items-center justify-center px-6 py-10">
+      <Card className="w-full max-w-lg border-white/50 bg-card/95 shadow-2xl backdrop-blur">
+        <CardHeader className="text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            {status === 'loading' ? <Loader2 className="h-7 w-7 animate-spin" /> : <KeyRound className="h-7 w-7" />}
+          </div>
+          <CardTitle className="text-3xl font-extrabold">{typeLabel}</CardTitle>
+          <CardDescription>
+            {info?.full_name ? `Здравствуйте, ${info.full_name}!` : 'Подготовим доступ к системе.'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          {!info ? (
+            <div className="flex items-center justify-center gap-3 rounded-xl border border-dashed p-8 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Проверяем ссылку...
             </div>
-        );
-    }
+          ) : null}
 
-    return (
-        <div className="login-page">
-            <div className="login-card">
-                <div className="login-header">
-                    <KeyRound size={32} className="text-accent" />
-                    <h1>{typeLabel}</h1>
-                    {info.full_name && (
-                        <p style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                            Здравствуйте, <strong>{info.full_name}</strong>!
-                        </p>
-                    )}
+          {info && !info.valid ? (
+            <>
+              <Alert variant="destructive">
+                <AlertTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  Ссылка недействительна
+                </AlertTitle>
+                <AlertDescription>{info.error || 'Срок действия ссылки истёк или она уже была использована.'}</AlertDescription>
+              </Alert>
+              <Button onClick={onDone} className="w-full">
+                Перейти ко входу
+              </Button>
+            </>
+          ) : null}
+
+          {status === 'success' ? (
+            <>
+              <Alert variant="success">
+                <AlertTitle className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4" />
+                  Пароль установлен
+                </AlertTitle>
+                <AlertDescription>Теперь можно войти в систему с новым паролем.</AlertDescription>
+              </Alert>
+              <Button onClick={onDone} className="w-full">
+                Войти
+              </Button>
+            </>
+          ) : null}
+
+          {info?.valid && status !== 'success' ? (
+            <form className="space-y-5" onSubmit={handleSubmit}>
+              <div className="space-y-2">
+                <Label htmlFor="password">Новый пароль</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPass ? 'text' : 'password'}
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder="Не менее 6 символов"
+                    className="pr-11"
+                    required
+                  />
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2"
+                    onClick={() => setShowPass((value) => !value)}
+                  >
+                    {showPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
                 </div>
-
-                <form onSubmit={handleSubmit} className="login-form">
-                    <label className="form-label">
-                        Новый пароль
-                        <div className="input-with-icon">
-                            <input
-                                type={showPass ? 'text' : 'password'}
-                                className="input-full"
-                                placeholder="Не менее 6 символов"
-                                value={password}
-                                onChange={e => setPassword(e.target.value)}
-                                required
-                            />
-                            <button
-                                type="button"
-                                className="ghost icon-btn input-icon-btn"
-                                onClick={() => setShowPass(v => !v)}
-                                tabIndex={-1}
-                            >
-                                {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-                            </button>
-                        </div>
-                    </label>
-
-                    <label className="form-label">
-                        Подтверждение пароля
-                        <input
-                            type={showPass ? 'text' : 'password'}
-                            className="input-full"
-                            placeholder="Повторите пароль"
-                            value={confirm}
-                            onChange={e => setConfirm(e.target.value)}
-                            required
-                        />
-                    </label>
-
-                    {error && (
-                        <div className="status-message error">
-                            <AlertTriangle size={16} />
-                            <span>{error}</span>
-                        </div>
-                    )}
-
-                    <button type="submit" className="primary" style={{ width: '100%' }} disabled={status === 'loading'}>
-                        {status === 'loading'
-                            ? <><Loader2 size={16} className="animate-spin" /> Сохранение...</>
-                            : 'Сохранить пароль'}
-                    </button>
-                </form>
-            </div>
-        </div>
-    );
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm">Подтверждение пароля</Label>
+                <Input
+                  id="confirm"
+                  type={showPass ? 'text' : 'password'}
+                  value={confirm}
+                  onChange={(event) => setConfirm(event.target.value)}
+                  placeholder="Повторите пароль"
+                  required
+                />
+              </div>
+              {error ? (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              ) : null}
+              <Button type="submit" className="w-full" disabled={status === 'loading'}>
+                {status === 'loading' ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                {status === 'loading' ? 'Сохранение...' : 'Сохранить пароль'}
+              </Button>
+            </form>
+          ) : null}
+        </CardContent>
+      </Card>
+    </div>
+  );
 }

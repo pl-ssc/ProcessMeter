@@ -1,61 +1,122 @@
 import React, { useState } from 'react';
+import { ArrowLeft, CheckCircle2, Eye, EyeOff, KeyRound, Loader2, Mail, UserRound } from 'lucide-react';
+import { Button } from './ui/button.jsx';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card.jsx';
+import { Input } from './ui/input.jsx';
+import { Label } from './ui/label.jsx';
+import { Alert, AlertDescription } from './ui/alert.jsx';
 
 const ORG_NAME = import.meta.env.VITE_ORG_NAME || 'ProcessMeter';
 
-export default function LoginPage({ onLogin, error }) {
+export default function LoginPage({ onLogin, onForgotPassword, error, forgotPasswordState, forgotPasswordError }) {
   const [showPassword, setShowPassword] = useState(false);
+  const [isForgotMode, setIsForgotMode] = useState(false);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    const username = form.get('username');
-    const password = form.get('password');
-    onLogin(username, password);
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    onLogin(form.get('username'), form.get('password'));
+  };
+
+  const handleForgotPassword = (event) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    onForgotPassword(form.get('username'));
   };
 
   return (
-    <div className="login-page">
-      <div className="login-card">
-        <h1>{ORG_NAME}</h1>
-        <p>Вход для заполнения трудоемкости операций</p>
-        <form onSubmit={handleSubmit}>
-          <label>
-            Логин
-            <input name="username" type="text" required />
-          </label>
-          <label>
-            Пароль
-            <div className="password-input-wrapper">
-              <input
-                name="password"
-                type={showPassword ? "text" : "password"}
-                required
-              />
-              <button
-                type="button"
-                className="password-toggle"
-                onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? "Скрыть пароль" : "Показать пароль"}
-              >
-                {showPassword ? (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                    <line x1="1" y1="1" x2="23" y2="23" />
-                  </svg>
-                ) : (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                )}
-              </button>
-            </div>
-          </label>
-          {error && <div className="error">{error}</div>}
-          <button type="submit">Войти</button>
-        </form>
-      </div>
+    <div className="flex min-h-screen items-center justify-center px-6 py-10">
+      <Card className="w-full max-w-md border-white/50 bg-card/95 shadow-2xl backdrop-blur">
+        <CardHeader className="space-y-4 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            {isForgotMode ? <Mail className="h-7 w-7" /> : <KeyRound className="h-7 w-7" />}
+          </div>
+          <div className="space-y-1">
+            <CardTitle className="text-3xl font-extrabold tracking-tight">{ORG_NAME}</CardTitle>
+            <CardDescription>
+              {isForgotMode ? 'Отправим ссылку для безопасного сброса пароля.' : 'Вход для заполнения трудоемкости операций'}
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isForgotMode ? (
+            <form className="space-y-5" onSubmit={handleForgotPassword}>
+              <div className="space-y-2">
+                <Label htmlFor="forgot-username">Email</Label>
+                <div className="relative">
+                  <UserRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input id="forgot-username" name="username" type="email" required className="pl-9" placeholder="name@company.ru" />
+                </div>
+              </div>
+              {forgotPasswordState === 'success' ? (
+                <Alert variant="success">
+                  <AlertDescription className="flex items-start gap-2">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>Если такой аккаунт существует, мы отправили ссылку для сброса пароля на указанный email.</span>
+                  </AlertDescription>
+                </Alert>
+              ) : null}
+              {forgotPasswordError ? (
+                <Alert variant="destructive">
+                  <AlertDescription>{forgotPasswordError}</AlertDescription>
+                </Alert>
+              ) : null}
+              <Button type="submit" className="w-full" disabled={forgotPasswordState === 'loading'}>
+                {forgotPasswordState === 'loading' ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                {forgotPasswordState === 'loading' ? 'Отправляем ссылку...' : 'Отправить ссылку'}
+              </Button>
+              <Button type="button" variant="ghost" className="w-full" onClick={() => setIsForgotMode(false)}>
+                <ArrowLeft className="h-4 w-4" />
+                Вернуться ко входу
+              </Button>
+            </form>
+          ) : (
+            <form className="space-y-5" onSubmit={handleSubmit}>
+              <div className="space-y-2">
+                <Label htmlFor="username">Логин</Label>
+                <div className="relative">
+                  <UserRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input id="username" name="username" required className="pl-9" placeholder="name@company.ru" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Пароль</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    className="pr-11"
+                    placeholder="Введите пароль"
+                  />
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2"
+                    onClick={() => setShowPassword((value) => !value)}
+                    aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+              {error ? (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              ) : null}
+              <Button type="submit" className="w-full">
+                Войти
+              </Button>
+              <Button type="button" variant="ghost" className="w-full" onClick={() => setIsForgotMode(true)}>
+                Забыли пароль?
+              </Button>
+            </form>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
-

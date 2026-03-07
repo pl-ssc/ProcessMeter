@@ -1,250 +1,209 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Check, X, Search } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Check, Edit2, Plus, Search, X } from 'lucide-react';
 import { apiFetch } from '../../api.js';
+import { Alert, AlertDescription } from '../ui/alert.jsx';
+import { Badge } from '../ui/badge.jsx';
+import { Button } from '../ui/button.jsx';
+import { Card, CardContent } from '../ui/card.jsx';
+import { Input } from '../ui/input.jsx';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table.jsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs.jsx';
 
 function DictionarySection({ type }) {
-    const [items, setItems] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    const [searchTerm, setSearchTerm] = useState('');
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [newItemName, setNewItemName] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editName, setEditName] = useState('');
 
-    // Для создания
-    const [newItemName, setNewItemName] = useState('');
-    const [isCreating, setIsCreating] = useState(false);
+  const endpoint = type === 'departments' ? '/api/admin/departments' : '/api/admin/professions';
 
-    // Для редактирования
-    const [editingId, setEditingId] = useState(null);
-    const [editName, setEditName] = useState('');
+  useEffect(() => {
+    loadItems();
+  }, [type]);
 
-    const endpoint = type === 'departments' ? '/api/admin/departments' : '/api/admin/professions';
+  const loadItems = async () => {
+    try {
+      setLoading(true);
+      const data = await apiFetch(endpoint);
+      setItems(data[type] || []);
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    useEffect(() => {
-        loadItems();
-    }, [type]);
+  const handleCreate = async () => {
+    if (!newItemName.trim()) return;
+    try {
+      setError('');
+      await apiFetch(endpoint, {
+        method: 'POST',
+        body: JSON.stringify({ name: newItemName.trim() }),
+      });
+      setNewItemName('');
+      setIsCreating(false);
+      loadItems();
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  };
 
-    const loadItems = async () => {
-        try {
-            setLoading(true);
-            const data = await apiFetch(endpoint);
-            setItems(data[type] || []);
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
+  const handleUpdate = async (id, isActive = undefined) => {
+    try {
+      setError('');
+      const body = {};
+      if (editName.trim() && editingId === id) body.name = editName.trim();
+      if (isActive !== undefined) body.is_active = isActive;
 
-    const handleCreate = async () => {
-        if (!newItemName.trim()) return;
-        try {
-            setError('');
-            await apiFetch(endpoint, {
-                method: 'POST',
-                body: JSON.stringify({ name: newItemName.trim() })
-            });
-            setNewItemName('');
-            setIsCreating(false);
-            loadItems();
-        } catch (err) {
-            setError(err.message);
-        }
-    };
+      await apiFetch(`${endpoint}/${id}`, {
+        method: 'PUT',
+        body: Object.keys(body).length > 0 ? JSON.stringify(body) : undefined,
+      });
 
-    const handleUpdate = async (id, isActive = undefined) => {
-        try {
-            setError('');
-            const body = {};
-            if (editName.trim() && editingId === id) {
-                body.name = editName.trim();
-            }
-            if (isActive !== undefined) {
-                body.is_active = isActive;
-            }
+      setEditingId(null);
+      setEditName('');
+      loadItems();
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  };
 
-            await apiFetch(`${endpoint}/${id}`, {
-                method: 'PUT',
-                body: Object.keys(body).length > 0 ? JSON.stringify(body) : undefined
-            });
+  const filteredItems = items.filter((item) => item.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
-            setEditingId(null);
-            setEditName('');
-            loadItems();
-        } catch (err) {
-            setError(err.message);
-        }
-    };
-
-    const filteredItems = items.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
-
-    return (
-        <div className="dictionary-section">
-            <div className="page-actions">
-                <div className="search-bar">
-                    <Search size={18} className="search-icon" />
-                    <input
-                        type="text"
-                        placeholder="Поиск по названию..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
-
-                <button className="primary" onClick={() => setIsCreating(true)} disabled={isCreating}>
-                    <Plus size={18} /> Добавить
-                </button>
-            </div>
-
-            {error && <div className="error-message" style={{ marginBottom: '1rem' }}>{error}</div>}
-
-            <div className="admin-card table-container">
-                <table className="admin-table">
-                    <thead>
-                        <tr>
-                            <th style={{ width: '60%' }}>Название</th>
-                            <th style={{ width: '20%' }}>Статус</th>
-                            <th style={{ width: '20%', textAlign: 'right' }}>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {isCreating && (
-                            <tr>
-                                <td>
-                                    <input
-                                        type="text"
-                                        value={newItemName}
-                                        onChange={e => setNewItemName(e.target.value)}
-                                        placeholder="Введите название..."
-                                        className="input-field"
-                                        autoFocus
-                                    />
-                                </td>
-                                <td><span className="badge success">Активен</span></td>
-                                <td style={{ textAlign: 'right' }}>
-                                    <div className="table-actions" style={{ justifyContent: 'flex-end' }}>
-                                        <button className="ghost icon-btn success" onClick={handleCreate} title="Сохранить">
-                                            <Check size={18} />
-                                        </button>
-                                        <button className="ghost icon-btn danger" onClick={() => setIsCreating(false)} title="Отмена">
-                                            <X size={18} />
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        )}
-
-                        {loading && items.length === 0 && (
-                            <tr>
-                                <td colSpan="3" style={{ textAlign: 'center', padding: '2rem' }}>Загрузка...</td>
-                            </tr>
-                        )}
-
-                        {!loading && filteredItems.length === 0 && !isCreating && (
-                            <tr>
-                                <td colSpan="3" style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
-                                    Нет записей
-                                </td>
-                            </tr>
-                        )}
-
-                        {filteredItems.map(item => (
-                            <tr key={item.id} style={{ opacity: item.is_active ? 1 : 0.6 }}>
-                                <td>
-                                    {editingId === item.id ? (
-                                        <input
-                                            type="text"
-                                            value={editName}
-                                            onChange={e => setEditName(e.target.value)}
-                                            className="input-field"
-                                            autoFocus
-                                        />
-                                    ) : (
-                                        <strong>{item.name}</strong>
-                                    )}
-                                </td>
-                                <td>
-                                    <span
-                                        onClick={() => handleUpdate(item.id, !item.is_active)}
-                                        className={`badge ${item.is_active ? '' : 'admin'}`}
-                                        style={{ cursor: 'pointer' }}
-                                        title="Нажмите для переключения статуса"
-                                    >
-                                        {item.is_active ? 'Активен' : 'Отключен'}
-                                    </span>
-                                </td>
-                                <td style={{ textAlign: 'right' }}>
-                                    <div className="table-actions" style={{ justifyContent: 'flex-end' }}>
-                                        {editingId === item.id ? (
-                                            <>
-                                                <button className="ghost icon-btn success" onClick={() => handleUpdate(item.id)} title="Сохранить">
-                                                    <Check size={18} />
-                                                </button>
-                                                <button className="ghost icon-btn danger" onClick={() => setEditingId(null)} title="Отмена">
-                                                    <X size={18} />
-                                                </button>
-                                            </>
-                                        ) : (
-                                            <button
-                                                className="ghost icon-btn"
-                                                onClick={() => {
-                                                    setEditingId(item.id);
-                                                    setEditName(item.name);
-                                                }}
-                                                title="Редактировать"
-                                            >
-                                                <Edit2 size={16} />
-                                            </button>
-                                        )}
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="relative max-w-sm flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Поиск по названию..." value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} className="pl-9" />
         </div>
-    );
+        <Button onClick={() => setIsCreating(true)} disabled={isCreating}>
+          <Plus className="h-4 w-4" />
+          Добавить
+        </Button>
+      </div>
+
+      {error ? (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      <Card>
+        <CardContent className="pt-6">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Название</TableHead>
+                <TableHead>Статус</TableHead>
+                <TableHead className="text-right">Действия</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isCreating ? (
+                <TableRow>
+                  <TableCell>
+                    <Input value={newItemName} onChange={(event) => setNewItemName(event.target.value)} placeholder="Введите название..." autoFocus />
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="success">Активен</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-end gap-1">
+                      <Button variant="ghost" size="icon" onClick={handleCreate}>
+                        <Check className="h-4 w-4 text-emerald-500" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => setIsCreating(false)}>
+                        <X className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : null}
+
+              {loading && items.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={3} className="py-8 text-center text-muted-foreground">
+                    Загрузка...
+                  </TableCell>
+                </TableRow>
+              ) : null}
+
+              {!loading && filteredItems.length === 0 && !isCreating ? (
+                <TableRow>
+                  <TableCell colSpan={3} className="py-8 text-center text-muted-foreground">
+                    Нет записей
+                  </TableCell>
+                </TableRow>
+              ) : null}
+
+              {filteredItems.map((item) => (
+                <TableRow key={item.id} className={!item.is_active ? 'opacity-60' : ''}>
+                  <TableCell>
+                    {editingId === item.id ? (
+                      <Input value={editName} onChange={(event) => setEditName(event.target.value)} autoFocus />
+                    ) : (
+                      <span className="font-semibold">{item.name}</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <button type="button" onClick={() => handleUpdate(item.id, !item.is_active)}>
+                      <Badge variant={item.is_active ? 'success' : 'secondary'}>{item.is_active ? 'Активен' : 'Отключен'}</Badge>
+                    </button>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-end gap-1">
+                      {editingId === item.id ? (
+                        <>
+                          <Button variant="ghost" size="icon" onClick={() => handleUpdate(item.id)}>
+                            <Check className="h-4 w-4 text-emerald-500" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => setEditingId(null)}>
+                            <X className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setEditingId(item.id);
+                            setEditName(item.name);
+                          }}
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
 
 export default function Dictionaries() {
-    const [activeTab, setActiveTab] = useState('departments');
-
-    return (
-        <div className="user-management">
-            <div className="tabs" style={{ display: 'flex', gap: '2rem', borderBottom: '1px solid rgba(128, 128, 128, 0.2)', marginBottom: '1.5rem' }}>
-                <button
-                    style={{
-                        background: 'none',
-                        border: 'none',
-                        padding: '0.5rem 0',
-                        borderBottom: activeTab === 'departments' ? '2px solid #3b82f6' : '2px solid transparent',
-                        color: activeTab === 'departments' ? '#3b82f6' : 'inherit',
-                        fontWeight: activeTab === 'departments' ? '600' : 'normal',
-                        cursor: 'pointer',
-                        fontSize: '1rem'
-                    }}
-                    onClick={() => setActiveTab('departments')}
-                >
-                    Подразделения
-                </button>
-                <button
-                    style={{
-                        background: 'none',
-                        border: 'none',
-                        padding: '0.5rem 0',
-                        borderBottom: activeTab === 'professions' ? '2px solid #3b82f6' : '2px solid transparent',
-                        color: activeTab === 'professions' ? '#3b82f6' : 'inherit',
-                        fontWeight: activeTab === 'professions' ? '600' : 'normal',
-                        cursor: 'pointer',
-                        fontSize: '1rem'
-                    }}
-                    onClick={() => setActiveTab('professions')}
-                >
-                    Профессии
-                </button>
-            </div>
-
-            {activeTab === 'departments' && <DictionarySection type="departments" />}
-            {activeTab === 'professions' && <DictionarySection type="professions" />}
-        </div>
-    );
+  return (
+    <Tabs defaultValue="departments" className="space-y-4">
+      <TabsList>
+        <TabsTrigger value="departments">Подразделения</TabsTrigger>
+        <TabsTrigger value="professions">Профессии</TabsTrigger>
+      </TabsList>
+      <TabsContent value="departments">
+        <DictionarySection type="departments" />
+      </TabsContent>
+      <TabsContent value="professions">
+        <DictionarySection type="professions" />
+      </TabsContent>
+    </Tabs>
+  );
 }

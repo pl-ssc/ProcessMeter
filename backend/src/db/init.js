@@ -17,7 +17,7 @@ export const ensureAdminUser = async (app) => {
 
         const passwordHash = await bcrypt.hash(env.ADMIN_PASSWORD, 10);
         await pool.query(
-            'INSERT INTO users (username, password_hash, full_name, role) VALUES ($1, $2, $3, $4)',
+            'INSERT INTO users (username, password_hash, full_name, role, password_changed_at) VALUES ($1, $2, $3, $4, now())',
             [env.ADMIN_USERNAME, passwordHash, env.ADMIN_FULL_NAME || null, 'admin']
         );
         if (app) app.log.info({ username: env.ADMIN_USERNAME }, 'Admin user created successfully');

@@ -129,8 +129,12 @@ export default async function authRoutes(fastify, options) {
         }
 
         const passwordHash = await bcrypt.hash(password, 10);
-        await query('UPDATE users SET password_hash = $1 WHERE id = $2', [passwordHash, info.userId]);
+        await query(
+            'UPDATE users SET password_hash = $1, password_changed_at = now() WHERE id = $2',
+            [passwordHash, info.userId]
+        );
         await markTokenUsed(info.tokenId);
+        reply.clearCookie('pm_token', { path: '/' });
 
         return { ok: true };
     });
