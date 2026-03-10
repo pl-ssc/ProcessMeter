@@ -28,26 +28,28 @@ async function ensureDemoUser(role) {
         throw new Error('invalid demo role');
     }
 
-    const { rows: existingRows } = await query(
-        'SELECT id, username, full_name, role FROM users WHERE username = $1 AND is_active = true LIMIT 1',
-        [template.username]
-    );
-    if (existingRows[0]) {
-        return existingRows[0];
-    }
-
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
 
-        const passwordHash = await bcrypt.hash(`demo-${role}-login`, 10);
-        const { rows } = await client.query(
-            `INSERT INTO users (username, password_hash, full_name, role, is_active, password_changed_at)
-             VALUES ($1, $2, $3, $4, true, now())
-             RETURNING id, username, full_name, role`,
-            [template.username, passwordHash, template.full_name, template.role]
+        let user;
+        const { rows: existingRows } = await client.query(
+            'SELECT id, username, full_name, role FROM users WHERE username = $1 AND is_active = true LIMIT 1',
+            [template.username]
         );
-        const user = rows[0];
+
+        if (existingRows[0]) {
+            user = existingRows[0];
+        } else {
+            const passwordHash = await bcrypt.hash(`demo-${role}-login`, 10);
+            const { rows } = await client.query(
+                `INSERT INTO users (username, password_hash, full_name, role, is_active, password_changed_at)
+                 VALUES ($1, $2, $3, $4, true, now())
+                 RETURNING id, username, full_name, role`,
+                [template.username, passwordHash, template.full_name, template.role]
+            );
+            user = rows[0];
+        }
 
         if (role === 'respondent') {
             const { rows: processRows } = await client.query(
@@ -58,12 +60,12 @@ async function ensureDemoUser(role) {
             );
 
             if (processRows.length > 0) {
-                const userIds = processRows.map(() => user.id);
-                const processIds = processRows.map((processRow) => processRow.id);
                 await client.query(
                     `INSERT INTO user_process_1_access (user_id, process_1_id)
-                     SELECT unnest($1::int[]), unnest($2::int[])`,
-                    [userIds, processIds]
+                     SELECT $1, p.id
+                     FROM unnest($2::int[]) AS p(id)
+                     ON CONFLICT DO NOTHING`,
+                    [user.id, processRows.map((processRow) => processRow.id)]
                 );
                 await client.query('SELECT copy_operations_to_user_answers($1)', [user.id]);
             }

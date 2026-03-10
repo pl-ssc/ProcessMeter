@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert';
 import { buildTestApp, clearDB, createTestUser, closeResources, getAuthCookie } from './setup.js';
 import bcrypt from 'bcryptjs';
+import pool from '../src/db/index.js';
+import { env } from '../src/config/env.js';
 
 test('Auth & Security API', async (t) => {
     let app;
@@ -118,5 +120,45 @@ test('Auth & Security API', async (t) => {
         });
 
         assert.strictEqual(response.statusCode, 403, 'Respondent cannot access analytics routes');
+    });
+
+    await t.test('POST /api/auth/demo-login - restores respondent access for existing demo user', async () => {
+        const previousDemoMode = env.DEMO_MODE;
+        env.DEMO_MODE = true;
+
+        try {
+            await pool.query(`INSERT INTO process_1 (id, f1_name) VALUES (1, 'Process 1'), (2, 'Process 2')`);
+            await pool.query(`INSERT INTO process_2 (id, process_1_id, f2_name) VALUES (11, 1, 'Process 1.1'), (21, 2, 'Process 2.1')`);
+            await pool.query(`INSERT INTO process_3 (id, process_2_id, f3_name) VALUES (111, 11, 'Process 1.1.1'), (211, 21, 'Process 2.1.1')`);
+            await pool.query(`INSERT INTO process_4 (id, process_3_id, f4_name) VALUES (1111, 111, 'Operation 1'), (2111, 211, 'Operation 2')`);
+
+            await pool.query(
+                `INSERT INTO users (username, password_hash, full_name, role, is_active, password_changed_at)
+                 VALUES ($1, $2, $3, 'respondent', true, now())`,
+                [ 'demo-respondent@processmeter.local', await bcrypt.hash('demo-respondent-login', 2), 'Демо Респондент' ]
+            );
+
+            const response = await app.inject({
+                method: 'POST',
+                url: '/api/auth/demo-login',
+                payload: { role: 'respondent' }
+            });
+
+            assert.strictEqual(response.statusCode, 200, 'Status should be 200');
+
+            const { rows: accessRows } = await pool.query(
+                'SELECT process_1_id FROM user_process_1_access WHERE user_id = (SELECT id FROM users WHERE username = $1) ORDER BY process_1_id',
+                ['demo-respondent@processmeter.local']
+            );
+            const { rows: answerRows } = await pool.query(
+                'SELECT process_4_id FROM user_answers WHERE user_id = (SELECT id FROM users WHERE username = $1) ORDER BY process_4_id',
+                ['demo-respondent@processmeter.local']
+            );
+
+            assert.deepStrictEqual(accessRows.map((row) => row.process_1_id), [1, 2], 'Demo respondent should have access to all process_1 records');
+            assert.deepStrictEqual(answerRows.map((row) => row.process_4_id), [1111, 2111], 'Demo respondent should receive answers for all available operations');
+        } finally {
+            env.DEMO_MODE = previousDemoMode;
+        }
     });
 });
