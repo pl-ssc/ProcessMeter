@@ -100,7 +100,10 @@ export default function RespondentView({ user, onLogout, isDark, onToggleTheme }
     if (dirtyMap.size === 0) return;
     try {
       const items = Array.from(dirtyMap.values()).map((item) => ({
+        answer_kind: item.answer_kind,
+        row_id: item.row_id,
         operation_id: item.operation_id,
+        custom_operation_id: item.custom_operation_id ?? null,
         labor_hours: item.labor_hours ?? null,
         system_id: item.system_id ?? null,
         note: item.note ?? null,
@@ -123,7 +126,7 @@ export default function RespondentView({ user, onLogout, isDark, onToggleTheme }
   const handleEdit = useCallback(
     (updatedItem) => {
       setAnswers((previous) => {
-        const index = previous.findIndex((answer) => answer.operation_id === updatedItem.operation_id);
+        const index = previous.findIndex((answer) => (answer.row_id || answer.operation_id) === (updatedItem.row_id || updatedItem.operation_id));
         if (index === -1) return previous;
         const next = [...previous];
         next[index] = updatedItem;
@@ -132,7 +135,7 @@ export default function RespondentView({ user, onLogout, isDark, onToggleTheme }
 
       setDirtyMap((previous) => {
         const next = new Map(previous);
-        next.set(updatedItem.operation_id, updatedItem);
+        next.set(updatedItem.row_id || updatedItem.operation_id, updatedItem);
         return next;
       });
 
@@ -140,6 +143,15 @@ export default function RespondentView({ user, onLogout, isDark, onToggleTheme }
     },
     [triggerAutoSave]
   );
+
+  const handleRemoveAnswer = useCallback((removedItem) => {
+    setAnswers((previous) => previous.filter((answer) => (answer.row_id || answer.operation_id) !== (removedItem.row_id || removedItem.operation_id)));
+    setDirtyMap((previous) => {
+      const next = new Map(previous);
+      next.delete(removedItem.row_id || removedItem.operation_id);
+      return next;
+    });
+  }, []);
 
   const confirmComplete = async () => {
     if (dirtyMap.size > 0) {
@@ -254,10 +266,13 @@ export default function RespondentView({ user, onLogout, isDark, onToggleTheme }
               answers={answers}
               systems={systems}
               onEdit={handleEdit}
+              onAnswersChange={setAnswers}
+              onRemoveAnswer={handleRemoveAnswer}
               dirtyMap={dirtyMap}
               isDark={isDark}
               isSubmitted={stats.status === 'completed'}
               selectedProcess={selectedProcess}
+              onStatsRefresh={loadStats}
             />
           </Suspense>
         </div>

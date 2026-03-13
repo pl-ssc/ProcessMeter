@@ -106,6 +106,48 @@ test('Respondent & Processes API', async (t) => {
         assert.strictEqual(body.is_submitted, false);
     });
 
+    await t.test('POST /api/answers/custom and GET /api/answers - Works with custom operations', async () => {
+        const user = await createTestUser({ email: 'custom@test.com', password: '123' });
+        const token = await getAuthCookie(app, user);
+
+        await pool.query('INSERT INTO user_process_1_access (user_id, process_1_id) VALUES ($1, 1)', [user.id]);
+
+        const createRes = await app.inject({
+            method: 'POST',
+            url: '/api/answers/custom',
+            headers: { cookie: token },
+            payload: {
+                process_3_id: 1,
+                name: 'Custom Operation',
+                labor_hours: 7,
+                system_id: 1,
+                note: 'Added manually'
+            }
+        });
+
+        assert.strictEqual(createRes.statusCode, 200);
+        const { operation } = JSON.parse(createRes.payload);
+        assert.strictEqual(operation.name, 'Custom Operation');
+
+        const answersRes = await app.inject({
+            method: 'GET',
+            url: '/api/answers?process_3_id=1',
+            headers: { cookie: token }
+        });
+
+        assert.strictEqual(answersRes.statusCode, 200);
+        const { answers } = JSON.parse(answersRes.payload);
+        assert.ok(answers.some((answer) => answer.answer_kind === 'custom' && answer.f4_name === 'Custom Operation'));
+
+        const statsRes = await app.inject({
+            method: 'GET',
+            url: '/api/user/stats',
+            headers: { cookie: token }
+        });
+        const statsBody = JSON.parse(statsRes.payload);
+        assert.strictEqual(statsBody.total_hours, 7);
+    });
+
     await t.test('POST /api/answers/complete - Submits survey', async () => {
         const user = await createTestUser({ email: 'complete@test.com', password: '123' });
         const token = await getAuthCookie(app, user);
