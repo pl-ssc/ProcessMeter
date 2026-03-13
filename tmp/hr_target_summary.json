@@ -1,0 +1,12 @@
+{
+  "process_1_id": 2,
+  "process_1_name": "Управление персоналом",
+  "level_2_count": 8,
+  "level_3_count": 55,
+  "level_4_count": 293,
+  "executor_distribution": {
+    "business": 65,
+    "front": 109,
+    "middle": 119
+  }
+}

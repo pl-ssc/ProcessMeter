@@ -1,0 +1,12 @@
+{
+  "process_1_id": 1,
+  "process_1_name": "Бухгалтерский и налоговый учет",
+  "level_2_count": 11,
+  "level_3_count": 48,
+  "level_4_count": 256,
+  "executor_distribution": {
+    "business": 38,
+    "front": 75,
+    "middle": 143
+  }
+}
