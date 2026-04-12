@@ -140,10 +140,7 @@ const ProcessTree = React.memo(function ProcessTree({ processes, selectedF3Index
     <div className="flex h-full flex-col bg-card/95 backdrop-blur-sm">
       <div className="sticky top-0 z-20 space-y-2 border-b bg-card/95 p-3 backdrop-blur-sm">
         <div className="flex items-center justify-between">
-          <div>
-            <div className="text-[11px] uppercase tracking-[0.24em] text-muted-foreground">Навигация</div>
-            <div className="text-base font-bold text-slate-800 dark:text-slate-100">Дерево процессов</div>
-          </div>
+          <div className="text-base font-bold text-slate-800 dark:text-slate-100">Дерево процессов</div>
         </div>
         <div className="flex gap-2">
           <div className="relative flex-1">

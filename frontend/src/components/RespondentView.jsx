@@ -234,7 +234,7 @@ export default function RespondentView({ user, onLogout, isDark, onToggleTheme }
         isDark={isDark}
         onToggleTheme={onToggleTheme}
       />
-      <InfoPanel stats={stats} onSubmit={handleSubmit} hasChanges={dirtyMap.size > 0} isSubmitted={stats.status === 'completed'} />
+      <InfoPanel stats={stats} onSubmit={handleSubmit} hasChanges={dirtyMap.size > 0} />
       {notice ? (
         <div className="px-6 pt-4">
           <Alert variant={notice.type === 'success' ? 'success' : 'destructive'}>

@@ -11,12 +11,9 @@ import {
   DialogTitle,
 } from './ui/dialog.jsx';
 
-export default function InfoPanel({ stats, onSubmit, hasChanges, isSubmitted }) {
+export default function InfoPanel({ stats, onSubmit, hasChanges }) {
   const { total_hours = 0, fte = 0, status = 'not_started' } = stats;
   const [showHelp, setShowHelp] = useState(false);
-
-  const fteNumber = Number(fte);
-  const fteVariant = Number.isNaN(fteNumber) ? 'secondary' : fteNumber < 0.8 ? 'default' : fteNumber <= 1.2 ? 'success' : 'destructive';
   const statusMap = {
     completed: { label: 'Завершено', variant: 'success' },
     in_progress: { label: 'В работе', variant: 'default' },
@@ -42,9 +39,6 @@ export default function InfoPanel({ stats, onSubmit, hasChanges, isSubmitted }) 
               </div>
               <div className="text-sm text-muted-foreground">FTE:</div>
               <div className="text-base font-semibold">{fte}</div>
-              <Badge variant={fteVariant} className="px-2 py-0 text-[11px]">
-                {Number.isNaN(fteNumber) ? '—' : fteNumber.toFixed(2)}
-              </Badge>
             </div>
             <div className="flex items-center gap-2 rounded-full border border-slate-200/80 bg-card/90 px-3 py-2 shadow-none dark:border-slate-800">
               <div className="rounded-full bg-secondary p-1.5 text-foreground">
@@ -55,9 +49,6 @@ export default function InfoPanel({ stats, onSubmit, hasChanges, isSubmitted }) 
                 {statusUi.label}
               </Badge>
             </div>
-            <Badge variant={isSubmitted ? 'success' : 'secondary'} className="px-3 py-1 text-[11px]">
-              {isSubmitted ? 'Только чтение' : 'Редактирование'}
-            </Badge>
             <Badge variant={hasChanges ? 'warning' : 'secondary'} className="px-3 py-1 text-[11px]">
               {hasChanges ? 'Есть несохраненные' : 'Все синхронизировано'}
             </Badge>
@@ -67,10 +58,12 @@ export default function InfoPanel({ stats, onSubmit, hasChanges, isSubmitted }) 
               <Info className="h-4 w-4" />
               Инструкция
             </Button>
-            <Button className="h-10 rounded-full px-4 text-sm" onClick={onSubmit} disabled={(status === 'completed' && !hasChanges) || Number(total_hours) === 0}>
-              <Send className="h-4 w-4" />
-              {status === 'completed' ? 'Завершено' : 'Завершить ввод данных'}
-            </Button>
+            {status !== 'completed' ? (
+              <Button className="h-10 rounded-full px-4 text-sm" onClick={onSubmit} disabled={Number(total_hours) === 0}>
+                <Send className="h-4 w-4" />
+                Завершить ввод данных
+              </Button>
+            ) : null}
           </div>
         </div>
       </div>
