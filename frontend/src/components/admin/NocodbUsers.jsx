@@ -2,14 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { Database, Loader2, Send, ShieldAlert, UserPlus } from 'lucide-react';
 import { apiFetch } from '../../api.js';
 import { Alert, AlertDescription } from '../ui/alert.jsx';
-import { Badge } from '../ui/badge.jsx';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card.jsx';
-import { Label } from '../ui/label.jsx';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table.jsx';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 export default function NocodbUsers() {
   const [users, setUsers] = useState([]);

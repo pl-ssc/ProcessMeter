@@ -8,15 +8,9 @@ import {
   Users,
 } from 'lucide-react';
 import Header from './Header.jsx';
-import { Badge } from './ui/badge.jsx';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from './ui/card.jsx';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Sidebar,
   SidebarContent,

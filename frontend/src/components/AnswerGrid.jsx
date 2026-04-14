@@ -3,14 +3,14 @@ import { FileText, PlusSquare, Trash2 } from 'lucide-react';
 import { apiFetch } from '../api.js';
 import { Alert, AlertDescription } from './ui/alert.jsx';
 import { Breadcrumb, BreadcrumbEllipsis, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from './ui/breadcrumb.jsx';
-import { Badge } from './ui/badge.jsx';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card.jsx';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table.jsx';
 import { Textarea } from './ui/textarea.jsx';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const EMPTY_SYSTEM_VALUE = '__none__';
 

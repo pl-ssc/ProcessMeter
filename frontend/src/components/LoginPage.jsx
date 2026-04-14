@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { ArrowLeft, CheckCircle2, Eye, EyeOff, KeyRound, Loader2, Mail, UserRound } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card.jsx';
-import { Label } from './ui/label.jsx';
 import { Alert, AlertDescription } from './ui/alert.jsx';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const ORG_NAME = import.meta.env.VITE_ORG_NAME || 'ProcessMeter';
 

@@ -4,14 +4,14 @@ import * as XLSX from 'xlsx';
 import { apiFetch } from '../../api.js';
 import { Alert, AlertDescription } from '../ui/alert.jsx';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog.jsx';
-import { Badge } from '../ui/badge.jsx';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card.jsx';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table.jsx';
 import { Textarea } from '../ui/textarea.jsx';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import UserForm from './UserForm.jsx';
 

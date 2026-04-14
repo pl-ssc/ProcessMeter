@@ -12,10 +12,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../ui/alert-dialog.jsx';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card.jsx';
-import { Label } from '../ui/label.jsx';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function DataImport() {
   const [loading, setLoading] = useState(false);

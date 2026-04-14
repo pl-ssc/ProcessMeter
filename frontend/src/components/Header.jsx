@@ -1,7 +1,7 @@
 import React from 'react';
 import { CheckCircle2, ChevronDown, Cloud, LogOut, Moon, Sun } from 'lucide-react';
-import { Avatar, AvatarFallback } from './ui/avatar.jsx';
-import { Badge } from './ui/badge.jsx';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';

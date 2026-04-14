@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowRight, Briefcase, Building2, Eye, FlaskConical, UserCog, UserRound } from 'lucide-react';
-import { Card, CardContent } from './ui/card.jsx';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 
 const ORG_NAME = import.meta.env.VITE_ORG_NAME || 'ProcessMeter';
 

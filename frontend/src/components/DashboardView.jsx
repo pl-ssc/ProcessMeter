@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Clock3, Search } from 'lucide-react';
 import { apiFetch } from '../api.js';
-import { Badge } from './ui/badge.jsx';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card.jsx';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table.jsx';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 export default function DashboardView() {
   const [data, setData] = useState(null);

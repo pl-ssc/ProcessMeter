@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Eye, EyeOff, KeyRound, Loader2 } from 'lucide-react';
 import { apiFetch } from '../api.js';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert.jsx';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card.jsx';
-import { Label } from './ui/label.jsx';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function SetPasswordPage({ token, onDone }) {
   const [info, setInfo] = useState(null);

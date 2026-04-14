@@ -2,14 +2,14 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, BarChart3, Building2, Clock3, Cpu, Filter, Gauge, RefreshCw, Search, Users } from 'lucide-react';
 import { apiFetch } from '../api.js';
 import Header from './Header.jsx';
-import { Badge } from './ui/badge.jsx';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card.jsx';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table.jsx';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs.jsx';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 function formatHours(value) {
   return `${Number(value || 0).toFixed(1)} ч`;

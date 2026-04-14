@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { Check, Edit2, Plus, Search, X } from 'lucide-react';
 import { apiFetch } from '../../api.js';
 import { Alert, AlertDescription } from '../ui/alert.jsx';
-import { Badge } from '../ui/badge.jsx';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card.jsx';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table.jsx';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const DICTIONARY_LABELS = {
   departments: 'Подразделения',

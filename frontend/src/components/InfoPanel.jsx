@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Activity, BriefcaseBusiness, Clock3, Info, Send } from 'lucide-react';
-import { Badge } from './ui/badge.jsx';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
