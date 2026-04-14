@@ -26,14 +26,15 @@ export default function LoginPage({ onLogin, onForgotPassword, error, forgotPass
 
   return (
     <div className="flex min-h-screen items-center justify-center px-6 py-10">
-      <Card className="w-full max-w-md border-white/50 bg-card/95 shadow-2xl backdrop-blur">
-        <CardHeader className="space-y-4 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+      <Card className="w-full max-w-md border-border/80 shadow-lg">
+        <CardHeader className="gap-4 text-center">
+          <div className="mx-auto flex size-14 items-center justify-center rounded-xl bg-primary/10 text-primary">
             {isForgotMode ? <Mail className="h-7 w-7" /> : <KeyRound className="h-7 w-7" />}
           </div>
-          <div className="space-y-1">
-            <CardTitle className="text-3xl font-extrabold tracking-tight">{ORG_NAME}</CardTitle>
-            <CardDescription>
+          <div className="flex flex-col gap-1">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">ProcessLabs / Secure Access</div>
+            <CardTitle className="text-3xl font-semibold tracking-tight">{ORG_NAME}</CardTitle>
+            <CardDescription className="mx-auto max-w-sm">
               {isForgotMode ? 'Отправим ссылку для безопасного сброса пароля.' : 'Вход для заполнения трудоемкости операций'}
             </CardDescription>
           </div>

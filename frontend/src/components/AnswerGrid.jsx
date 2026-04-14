@@ -208,14 +208,14 @@ export default function AnswerGrid({ answers, systems, onEdit, onAnswersChange, 
 
   return (
     <>
-      <Card className="flex h-full flex-col overflow-hidden rounded-[28px] border-border/80 bg-card/95 shadow-none backdrop-blur-sm">
-        <CardHeader className="sticky top-0 z-20 gap-2 border-b bg-card/95 px-4 py-2.5 backdrop-blur-sm">
+      <Card className="flex h-full flex-col overflow-hidden rounded-xl border-border/80 shadow-sm">
+        <CardHeader className="sticky top-0 z-20 gap-2 border-b border-border/80 bg-card px-4 py-3">
           <div className="flex items-start justify-between gap-4">
             <div>
               <CardTitle className="text-[18px] leading-none">Операции и трудозатраты</CardTitle>
             </div>
             {!isSubmitted ? (
-              <Button type="button" variant="outline" className="rounded-full" onClick={() => setIsAddingCustom(true)}>
+              <Button type="button" variant="outline" onClick={() => setIsAddingCustom(true)}>
                 <PlusSquare className="h-4 w-4" />
                 Добавить свою операцию
               </Button>
@@ -251,16 +251,16 @@ export default function AnswerGrid({ answers, systems, onEdit, onAnswersChange, 
               </colgroup>
               <TableHeader className="z-30 bg-card">
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="sticky left-0 top-0 z-40 h-[58px] border-r border-b bg-slate-50 px-4 align-middle text-sm dark:bg-slate-900/70">
+                  <TableHead className="sticky left-0 top-0 z-40 h-[58px] border-r border-b bg-secondary px-4 align-middle text-sm">
                     {renderHeader('Операция', headerTooltips.f4_name)}
                   </TableHead>
-                  <TableHead className="sticky top-0 z-30 h-[58px] border-r border-b bg-slate-50 px-4 align-middle text-sm dark:bg-slate-900/70">
+                  <TableHead className="sticky top-0 z-30 h-[58px] border-r border-b bg-secondary px-4 align-middle text-sm">
                     {renderHeader('Трудозатраты', headerTooltips.labor_hours)}
                   </TableHead>
-                  <TableHead className="sticky top-0 z-30 h-[58px] border-r border-b bg-slate-50 px-4 align-middle text-sm dark:bg-slate-900/70">
+                  <TableHead className="sticky top-0 z-30 h-[58px] border-r border-b bg-secondary px-4 align-middle text-sm">
                     {renderHeader('ИТ-система', headerTooltips.system_id)}
                   </TableHead>
-                  <TableHead className="sticky top-0 z-30 h-[58px] border-b bg-slate-50 px-0 align-middle text-sm dark:bg-slate-900/70">
+                  <TableHead className="sticky top-0 z-30 h-[58px] border-b bg-secondary px-0 align-middle text-sm">
                     <div className="flex h-full items-center justify-center" title={headerTooltips.note}>
                       <FileText className="h-4 w-4 text-primary" />
                     </div>
@@ -277,12 +277,12 @@ export default function AnswerGrid({ answers, systems, onEdit, onAnswersChange, 
                     (item.note && item.note.trim() !== '');
                   const rowTint = isDirty
                     ? isDark
-                      ? 'bg-emerald-950/40'
-                      : 'bg-emerald-50'
+                      ? 'bg-primary/10'
+                      : 'bg-primary/5'
                     : hasData
                       ? isDark
-                        ? 'bg-sky-950/30'
-                        : 'bg-sky-50/70'
+                        ? 'bg-secondary'
+                        : 'bg-secondary/60'
                       : '';
                   const hasNote = !!(item.note && item.note.trim() !== '');
 
@@ -331,8 +331,8 @@ export default function AnswerGrid({ answers, systems, onEdit, onAnswersChange, 
                           placeholder="0"
                           className={
                             activeCell?.row === (item.row_id || item.operation_id) && activeCell?.column === 'labor_hours'
-                              ? 'pm-focus-ring h-10 w-full rounded-xl border-2 border-emerald-400 bg-emerald-50/60 text-sm shadow-none transition-all dark:bg-emerald-950/20'
-                              : 'h-10 w-full rounded-xl border-slate-200 bg-background text-sm shadow-none transition-all'
+                              ? 'pm-focus-ring h-10 w-full rounded-lg border-primary/40 bg-primary/5 text-sm shadow-none transition-all'
+                              : 'h-10 w-full rounded-lg bg-background text-sm shadow-none transition-all'
                           }
                         />
                       </TableCell>
@@ -351,8 +351,8 @@ export default function AnswerGrid({ answers, systems, onEdit, onAnswersChange, 
                             }
                             className={
                               activeCell?.row === (item.row_id || item.operation_id) && activeCell?.column === 'system_id'
-                                ? 'pm-focus-ring h-10 rounded-xl border-2 border-emerald-400 bg-emerald-50/60 text-sm shadow-none transition-all dark:bg-emerald-950/20'
-                                : 'h-10 rounded-xl border-slate-200 bg-background text-sm shadow-none transition-all'
+                                ? 'pm-focus-ring h-10 rounded-lg border-primary/40 bg-primary/5 text-sm shadow-none transition-all'
+                                : 'h-10 rounded-lg bg-background text-sm shadow-none transition-all'
                             }
                           >
                             <SelectValue placeholder="Выберите систему" />
@@ -377,8 +377,8 @@ export default function AnswerGrid({ answers, systems, onEdit, onAnswersChange, 
                             disabled={isSubmitted}
                             className={
                               hasNote
-                                ? 'h-10 w-10 rounded-xl border-slate-200 bg-sky-50 text-primary shadow-none hover:bg-sky-100 dark:bg-sky-950/30'
-                                : 'h-10 w-10 rounded-xl border-dashed border-slate-300 bg-transparent text-muted-foreground shadow-none hover:bg-slate-50 dark:hover:bg-slate-900'
+                                ? 'size-10 rounded-lg border-border bg-primary/5 text-primary shadow-none hover:bg-primary/10'
+                                : 'size-10 rounded-lg border-dashed border-border bg-transparent text-muted-foreground shadow-none hover:bg-secondary'
                             }
                             title={hasNote ? 'Редактировать примечание' : 'Добавить примечание'}
                           >

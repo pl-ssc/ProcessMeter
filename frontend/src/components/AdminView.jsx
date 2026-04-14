@@ -102,20 +102,20 @@ export default function AdminView({ user, onLogout, isDark, onToggleTheme, onOpe
       <SidebarProvider defaultOpen>
         <Sidebar
           collapsible="none"
-          className="sticky top-20 self-start h-[calc(100svh-5rem)] border-r border-sidebar-border/70 bg-sidebar"
+          className="sticky top-[73px] self-start h-[calc(100svh-73px)] border-r border-sidebar-border bg-sidebar"
         >
           <SidebarHeader className="!px-4 !pt-4 !pb-3">
             <div
               className={cn(
-                'rounded-2xl border px-3 py-2 transition-colors',
+                'rounded-xl border px-3 py-3 transition-colors',
                 activeTab === 'dictionaries'
-                  ? 'border-sidebar-primary/30 bg-sidebar-primary/10 shadow-sm'
-                  : 'border-sidebar-border/70 bg-sidebar-accent/25'
+                  ? 'border-sidebar-primary/25 bg-sidebar-primary/10 shadow-sm'
+                  : 'border-sidebar-border bg-card'
               )}
             >
               <div className="min-w-0">
-                <div className="text-[11px] uppercase tracking-[0.22em] text-sidebar-foreground/60">Console</div>
-                <div className="truncate text-sm font-semibold text-sidebar-foreground">Управление</div>
+                <div className="text-[11px] uppercase tracking-[0.22em] text-sidebar-foreground/60">ProcessLabs / Admin</div>
+                <div className="truncate text-sm font-semibold text-sidebar-foreground">Управление системой</div>
                 <div className="truncate text-[11px] uppercase tracking-[0.18em] text-sidebar-foreground/60">
                   {sidebarHeaderLabel}
                 </div>
@@ -261,20 +261,20 @@ export default function AdminView({ user, onLogout, isDark, onToggleTheme, onOpe
             onToggleTheme={onToggleTheme}
           />
 
-          <div className="flex-1 overflow-auto p-6">
+          <div className="flex-1 overflow-auto p-4 md:p-6">
             <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
               <div className="space-y-2">
-                <div className="text-sm uppercase tracking-[0.2em] text-muted-foreground">Админ-панель</div>
+                <div className="text-sm uppercase tracking-[0.2em] text-muted-foreground">Control Center</div>
                 <div className="flex flex-wrap items-center gap-3">
-                  <h1 className="text-3xl font-extrabold tracking-tight">
+                  <h1 className="text-3xl font-semibold tracking-tight">
                     {activePageTitle}
                   </h1>
                   {activeTab === 'users' ? (
-                    <Badge variant="secondary" className="rounded-full px-3 py-1 text-[11px] uppercase tracking-wide">
+                    <Badge variant="secondary" className="px-3 py-1 text-[11px] uppercase tracking-wide">
                       {activeRoleLabel}
                     </Badge>
                   ) : activeTab === 'dictionaries' ? (
-                    <Badge variant="secondary" className="rounded-full px-3 py-1 text-[11px] uppercase tracking-wide">
+                    <Badge variant="secondary" className="px-3 py-1 text-[11px] uppercase tracking-wide">
                       {activeDictionaryLabel}
                     </Badge>
                   ) : null}
@@ -285,7 +285,7 @@ export default function AdminView({ user, onLogout, isDark, onToggleTheme, onOpe
               </div>
             </div>
 
-            <Suspense fallback={<div className="space-y-4"><Skeleton className="h-16 rounded-3xl" /><Skeleton className="h-80 rounded-3xl" /></div>}>
+            <Suspense fallback={<div className="space-y-4"><Skeleton className="h-16 rounded-xl" /><Skeleton className="h-80 rounded-xl" /></div>}>
               {activeTab === 'users' ? <UserManagement role={selectedUserRole} /> : null}
               {activeTab === 'dictionaries' ? <Dictionaries key={selectedDictionarySection} type={selectedDictionarySection} /> : null}
               {activeTab === 'dashboards' ? <AnalyticsLinkCard onOpenAnalytics={onOpenAnalytics} /> : null}

@@ -90,13 +90,13 @@ export default function AnalyticsPage({ user, onLogout, isDark, onToggleTheme, o
   return (
     <div className="flex h-full flex-col">
       <Header user={user} onLogout={onLogout} isDark={isDark} onToggleTheme={onToggleTheme} />
-      <main className="min-h-0 flex-1 overflow-auto p-6">
+      <main className="min-h-0 flex-1 overflow-auto p-4 md:p-6">
         <div className="space-y-6">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div className="space-y-2">
-              <div className="text-sm uppercase tracking-[0.2em] text-muted-foreground">Analytics Workspace</div>
+              <div className="text-sm uppercase tracking-[0.2em] text-muted-foreground">ProcessLabs / Analytics</div>
               <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-3xl font-extrabold tracking-tight">Раздел аналитики</h1>
+                <h1 className="text-3xl font-semibold tracking-tight">Раздел аналитики</h1>
                 {onBackToAdmin ? (
                   <Button variant="outline" onClick={onBackToAdmin}>
                     <ArrowLeft className="h-4 w-4" />
@@ -109,7 +109,7 @@ export default function AnalyticsPage({ user, onLogout, isDark, onToggleTheme, o
               </p>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-2 xl:grid-cols-4">
               <FilterSelect
                 label="Подразделение"
                 value={filters.department_id}
@@ -144,7 +144,7 @@ export default function AnalyticsPage({ user, onLogout, isDark, onToggleTheme, o
             </div>
           </div>
 
-          {error ? <div className="rounded-3xl border border-destructive/20 bg-destructive/5 p-6 text-sm text-destructive">{error}</div> : null}
+          {error ? <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-6 text-sm text-destructive">{error}</div> : null}
           {loading ? <AnalyticsSkeleton /> : null}
 
           {!loading && data ? (
@@ -434,10 +434,10 @@ function AnalyticsSkeleton() {
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <div key={index} className="h-32 rounded-3xl border bg-card" />
+          <div key={index} className="h-32 rounded-xl border bg-card" />
         ))}
       </div>
-      <div className="h-96 rounded-3xl border bg-card" />
+      <div className="h-96 rounded-xl border bg-card" />
     </div>
   );
 }
@@ -478,10 +478,10 @@ function StatsGrid({ summary }) {
           <CardContent className="flex items-start justify-between p-6">
             <div className="space-y-2">
               <div className="text-sm text-muted-foreground">{card.title}</div>
-              <div className="text-3xl font-extrabold tracking-tight">{card.value}</div>
+              <div className="text-3xl font-semibold tracking-tight">{card.value}</div>
               <div className="text-sm text-muted-foreground">{card.description}</div>
             </div>
-            <div className="rounded-2xl bg-primary/10 p-3 text-primary">
+            <div className="rounded-xl bg-primary/10 p-3 text-primary">
               <card.icon className="h-5 w-5" />
             </div>
           </CardContent>
@@ -493,9 +493,9 @@ function StatsGrid({ summary }) {
 
 function DashboardIntent({ icon: Icon, title, description }) {
   return (
-    <Card className="border-dashed">
+    <Card className="border-dashed border-border/80 bg-secondary/35 shadow-none">
       <CardContent className="flex items-start gap-4 p-6">
-        <div className="rounded-2xl bg-secondary p-3 text-primary">
+        <div className="rounded-xl bg-card p-3 text-primary">
           <Icon className="h-5 w-5" />
         </div>
         <div className="space-y-1">

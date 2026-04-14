@@ -23,25 +23,25 @@ export default function InfoPanel({ stats, onSubmit, hasChanges }) {
 
   return (
     <>
-      <div className="sticky top-0 z-30 border-b bg-[hsl(var(--background)/0.88)] px-6 py-3 backdrop-blur-sm">
+      <div className="sticky top-0 z-30 border-b border-border/80 bg-background/92 px-4 py-3 backdrop-blur-sm md:px-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex min-w-0 flex-wrap items-center gap-2.5">
-            <div className="flex items-center gap-2 rounded-full border border-slate-200/80 bg-card/90 px-3 py-2 shadow-none dark:border-slate-800">
-              <div className="rounded-full bg-primary/10 p-1.5 text-primary">
+            <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 shadow-none">
+              <div className="rounded-lg bg-primary/10 p-1.5 text-primary">
                 <Clock3 className="h-3.5 w-3.5" />
               </div>
               <div className="text-sm text-muted-foreground">Трудозатраты:</div>
               <div className="text-base font-semibold">{total_hours} ч.</div>
             </div>
-            <div className="flex items-center gap-2 rounded-full border border-slate-200/80 bg-card/90 px-3 py-2 shadow-none dark:border-slate-800">
-              <div className="rounded-full bg-accent/10 p-1.5 text-accent">
+            <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 shadow-none">
+              <div className="rounded-lg bg-accent/10 p-1.5 text-accent">
                 <BriefcaseBusiness className="h-3.5 w-3.5" />
               </div>
               <div className="text-sm text-muted-foreground">FTE:</div>
               <div className="text-base font-semibold">{fte}</div>
             </div>
-            <div className="flex items-center gap-2 rounded-full border border-slate-200/80 bg-card/90 px-3 py-2 shadow-none dark:border-slate-800">
-              <div className="rounded-full bg-secondary p-1.5 text-foreground">
+            <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 shadow-none">
+              <div className="rounded-lg bg-secondary p-1.5 text-foreground">
                 <Activity className="h-3.5 w-3.5" />
               </div>
               <div className="text-sm text-muted-foreground">Статус:</div>
@@ -54,12 +54,12 @@ export default function InfoPanel({ stats, onSubmit, hasChanges }) {
             </Badge>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" className="h-10 rounded-full border-slate-200 bg-card/90 px-4 text-sm shadow-none" onClick={() => setShowHelp(true)}>
+            <Button variant="outline" className="h-10 px-4 text-sm shadow-none" onClick={() => setShowHelp(true)}>
               <Info className="h-4 w-4" />
               Инструкция
             </Button>
             {status !== 'completed' ? (
-              <Button className="h-10 rounded-full px-4 text-sm" onClick={onSubmit} disabled={Number(total_hours) === 0}>
+              <Button className="h-10 px-4 text-sm" onClick={onSubmit} disabled={Number(total_hours) === 0}>
                 <Send className="h-4 w-4" />
                 Завершить ввод данных
               </Button>

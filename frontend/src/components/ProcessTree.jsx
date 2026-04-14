@@ -122,10 +122,10 @@ const ProcessTree = React.memo(function ProcessTree({ processes, selectedF3Index
     <button
       type="button"
       onClick={onClick}
-      className={`flex w-full items-start gap-2 rounded-xl px-2.5 py-2 text-left text-sm transition-all ${
+      className={`flex w-full items-start gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-all ${
         selected
-          ? 'pm-soft-pulse bg-primary/10 text-primary ring-1 ring-primary/20'
-          : 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-900'
+          ? 'bg-primary/10 text-primary ring-1 ring-primary/20'
+          : 'text-foreground hover:bg-secondary'
       }`}
       style={{ paddingLeft: `${12 + depth * 16}px` }}
       title={label}
@@ -137,10 +137,10 @@ const ProcessTree = React.memo(function ProcessTree({ processes, selectedF3Index
   );
 
   return (
-    <div className="flex h-full flex-col bg-card/95 backdrop-blur-sm">
-      <div className="sticky top-0 z-20 space-y-2 border-b bg-card/95 p-3 backdrop-blur-sm">
+    <div className="flex h-full flex-col bg-card">
+      <div className="sticky top-0 z-20 space-y-2 border-b border-border/80 bg-card p-3">
         <div className="flex items-center justify-between">
-          <div className="text-base font-bold text-slate-800 dark:text-slate-100">Дерево процессов</div>
+          <div className="text-base font-semibold text-foreground">Дерево процессов</div>
         </div>
         <div className="flex gap-2">
           <div className="relative flex-1">
@@ -149,18 +149,18 @@ const ProcessTree = React.memo(function ProcessTree({ processes, selectedF3Index
               placeholder="Поиск по процессам..."
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
-              className="h-9 rounded-xl border-slate-200 bg-background/80 pl-9 pr-9 text-sm shadow-none"
+              className="h-9 rounded-lg pl-9 pr-9 text-sm shadow-none"
             />
             {searchQuery ? (
-              <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 rounded-lg" onClick={() => setSearchQuery('')}>
+              <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 size-7 -translate-y-1/2 rounded-md" onClick={() => setSearchQuery('')}>
                 <X className="h-4 w-4" />
               </Button>
             ) : null}
           </div>
-          <Button variant="outline" size="icon" className="h-9 w-9 rounded-xl border-slate-200 shadow-none" onClick={handleExpandAll} title="Развернуть все">
+          <Button variant="outline" size="icon" className="size-9 rounded-lg shadow-none" onClick={handleExpandAll} title="Развернуть все">
             <ChevronsDown className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="icon" className="h-9 w-9 rounded-xl border-slate-200 shadow-none" onClick={() => setExpanded(new Set())} title="Свернуть все">
+          <Button variant="outline" size="icon" className="size-9 rounded-lg shadow-none" onClick={() => setExpanded(new Set())} title="Свернуть все">
             <ChevronsUp className="h-4 w-4" />
           </Button>
         </div>
@@ -170,7 +170,7 @@ const ProcessTree = React.memo(function ProcessTree({ processes, selectedF3Index
         <div className="space-y-1 p-2.5">
           {searchQuery.trim()
             ? searchResults.map((result) => (
-                <div key={result.process_3_id} className="rounded-2xl border border-slate-200/80 bg-background/90 p-2 dark:border-slate-800">
+                <div key={result.process_3_id} className="rounded-lg border border-border bg-background p-2">
                   <button
                     type="button"
                     onClick={() => {
@@ -180,7 +180,7 @@ const ProcessTree = React.memo(function ProcessTree({ processes, selectedF3Index
                     className={`w-full rounded-lg p-2.5 text-left text-sm transition-colors ${
                       selectedF3Index === result.process_3_id
                         ? 'bg-primary/10 text-primary'
-                        : 'hover:bg-slate-100 dark:hover:bg-slate-900'
+                        : 'hover:bg-secondary'
                     }`}
                   >
                     <div className="text-xs text-muted-foreground">{result.f1_name} / {result.f2_name}</div>
@@ -192,7 +192,7 @@ const ProcessTree = React.memo(function ProcessTree({ processes, selectedF3Index
                 </div>
               ))
             : tree.map((p1) => (
-                <div key={p1.process_1_id} className="pm-soft-rise space-y-1 rounded-[20px] border border-slate-200/70 bg-white/70 p-2 dark:border-slate-800 dark:bg-slate-950/30">
+                <div key={p1.process_1_id} className="pm-soft-rise space-y-1 rounded-xl border border-border bg-background p-2">
                   {tree.length > 1 &&
                     renderNodeButton({
                       label: p1.f1_name,

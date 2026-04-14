@@ -1,7 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
 
 @tailwind base;
 @tailwind components;
@@ -9,74 +8,74 @@
 
 @layer base {
   :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --destructive-foreground: 210 40% 98%;
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --radius: 0.625rem;
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
+    --background: 210 33% 98%;
+    --foreground: 218 32% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 218 32% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 218 32% 12%;
+    --primary: 212 78% 42%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 218 32% 16%;
+    --muted: 210 30% 95%;
+    --muted-foreground: 215 16% 40%;
+    --accent: 190 84% 42%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 52%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 23% 89%;
+    --input: 214 25% 91%;
+    --ring: 212 78% 42%;
+    --radius: 0.75rem;
+    --chart-1: 212 78% 42%;
+    --chart-2: 190 84% 42%;
+    --chart-3: 222 47% 32%;
+    --chart-4: 205 68% 58%;
+    --chart-5: 194 38% 74%;
+    --sidebar: 216 42% 97%;
+    --sidebar-foreground: 218 32% 14%;
+    --sidebar-primary: 212 78% 42%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 34% 94%;
+    --sidebar-accent-foreground: 218 32% 16%;
+    --sidebar-border: 214 23% 89%;
+    --sidebar-ring: 212 78% 42%;
   }
 
   .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --destructive-foreground: 210 40% 98%;
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
+    --background: 221 38% 9%;
+    --foreground: 210 40% 96%;
+    --card: 220 31% 13%;
+    --card-foreground: 210 40% 96%;
+    --popover: 220 31% 13%;
+    --popover-foreground: 210 40% 96%;
+    --primary: 205 86% 65%;
+    --primary-foreground: 221 39% 10%;
+    --secondary: 220 22% 18%;
+    --secondary-foreground: 210 40% 96%;
+    --muted: 220 18% 18%;
+    --muted-foreground: 214 15% 69%;
+    --accent: 190 88% 53%;
+    --accent-foreground: 221 39% 10%;
+    --destructive: 0 72% 58%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 17% 22%;
+    --input: 220 17% 22%;
+    --ring: 205 86% 65%;
+    --chart-1: 205 86% 65%;
+    --chart-2: 190 88% 53%;
+    --chart-3: 214 48% 74%;
+    --chart-4: 201 44% 32%;
+    --chart-5: 220 18% 60%;
+    --sidebar: 221 33% 11%;
+    --sidebar-foreground: 210 40% 96%;
+    --sidebar-primary: 205 86% 65%;
+    --sidebar-primary-foreground: 221 39% 10%;
+    --sidebar-accent: 220 22% 18%;
+    --sidebar-accent-foreground: 210 40% 96%;
+    --sidebar-border: 220 17% 22%;
+    --sidebar-ring: 205 86% 65%;
   }
 
   * {
@@ -91,14 +90,11 @@
 
   body {
     @apply antialiased bg-background text-foreground;
-    font-family: 'Quicksand', system-ui, sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
     background-image:
-      radial-gradient(circle at top left, hsl(var(--primary) / 0.12), transparent 28%),
-      radial-gradient(circle at bottom right, hsl(var(--accent) / 0.08), transparent 26%);
-  }
-  .theme {
-    --font-heading: var(--font-sans);
-    --font-sans: 'Geist Variable', sans-serif;
+      radial-gradient(circle at top left, hsl(var(--primary) / 0.08), transparent 26%),
+      radial-gradient(circle at 100% 0%, hsl(var(--accent) / 0.08), transparent 20%),
+      linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--background)) 100%);
   }
   html {
     @apply font-sans;
@@ -129,7 +125,7 @@
   .pm-focus-ring {
     box-shadow:
       0 0 0 1px hsl(var(--background)),
-      0 0 0 3px hsl(var(--accent) / 0.18);
+      0 0 0 3px hsl(var(--primary) / 0.22);
   }
 }
 
@@ -185,7 +181,7 @@
 
 .gdg-style,
 .dvn-underlay {
-  font-family: 'Quicksand', system-ui, sans-serif !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
 }
 
 .gdg-style {

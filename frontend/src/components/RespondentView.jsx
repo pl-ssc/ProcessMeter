@@ -225,7 +225,7 @@ export default function RespondentView({ user, onLogout, isDark, onToggleTheme }
   }, [processes, selectedF3Index]);
 
   return (
-    <div className="flex h-full flex-col bg-[linear-gradient(180deg,hsl(var(--background))_0%,hsl(var(--background))_42%,hsl(var(--secondary)/0.35)_100%)]">
+    <div className="flex h-full flex-col">
       <Header
         user={user}
         onLogout={onLogout}
@@ -236,7 +236,7 @@ export default function RespondentView({ user, onLogout, isDark, onToggleTheme }
       />
       <InfoPanel stats={stats} onSubmit={handleSubmit} hasChanges={dirtyMap.size > 0} />
       {notice ? (
-        <div className="px-6 pt-4">
+        <div className="px-4 pt-4 md:px-6">
           <Alert variant={notice.type === 'success' ? 'success' : 'destructive'}>
             <AlertDescription className="flex items-center justify-between gap-3">
               <span>{notice.message}</span>
@@ -248,15 +248,15 @@ export default function RespondentView({ user, onLogout, isDark, onToggleTheme }
         </div>
       ) : null}
       <div
-        className="grid min-h-0 flex-1 gap-4 px-4 pb-4 pt-4"
+        className="grid min-h-0 flex-1 gap-4 px-4 pb-4 pt-4 md:px-6"
         style={isCompactLayout ? { gridTemplateColumns: '1fr', gridTemplateRows: 'minmax(280px, 36vh) 1fr' } : { gridTemplateColumns: `${sidebarWidth}px 8px 1fr` }}
       >
-        <div className="min-h-0 overflow-hidden rounded-[28px] border border-slate-200/80 bg-card/80 shadow-none dark:border-slate-800">
+        <div className="min-h-0 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
           <ProcessTree processes={processes} selectedF3Index={selectedF3Index} onSelectF3={handleSelectF3} />
         </div>
         {!isCompactLayout ? (
           <div
-            className="cursor-col-resize rounded-full bg-gradient-to-b from-transparent via-primary/35 to-transparent transition-colors hover:via-primary"
+            className="cursor-col-resize rounded-full bg-gradient-to-b from-transparent via-border to-transparent transition-colors hover:via-primary/35"
             onMouseDown={startResizing}
           />
         ) : null}

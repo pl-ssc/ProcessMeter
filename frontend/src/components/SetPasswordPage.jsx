@@ -51,12 +51,13 @@ export default function SetPasswordPage({ token, onDone }) {
 
   return (
     <div className="flex min-h-screen items-center justify-center px-6 py-10">
-      <Card className="w-full max-w-lg border-white/50 bg-card/95 shadow-2xl backdrop-blur">
+      <Card className="w-full max-w-lg border-border/80 shadow-lg">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-xl bg-primary/10 text-primary">
             {status === 'loading' ? <Loader2 className="h-7 w-7 animate-spin" /> : <KeyRound className="h-7 w-7" />}
           </div>
-          <CardTitle className="text-3xl font-extrabold">{typeLabel}</CardTitle>
+          <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">ProcessLabs / Password Flow</div>
+          <CardTitle className="text-3xl font-semibold">{typeLabel}</CardTitle>
           <CardDescription>
             {info?.full_name ? `Здравствуйте, ${info.full_name}!` : 'Подготовим доступ к системе.'}
           </CardDescription>
