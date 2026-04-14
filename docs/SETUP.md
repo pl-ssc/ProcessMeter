@@ -3,7 +3,7 @@
 ## 1. Запуск PostgreSQL
 
 ```bash
-docker compose up -d db
+docker compose up -d mydb
 ```
 
 ## 2. Создание `.env`
@@ -28,9 +28,9 @@ ORG_NAME=МояОрганизация
 ## 3. Установка зависимостей
 
 ```bash
-cd backend && npm install
-cd ../frontend && npm install
-cd ..
+npm install
+npm --prefix backend install
+npm --prefix frontend install
 ```
 
 ## 4. Применение миграций
@@ -42,28 +42,35 @@ npm run migrate:up
 
 Миграции хранятся в `backend/migrations/`. При запуске через `npm start` применяются автоматически через `start.js`.
 
-## 5. Запуск бэкенда
+## 5. Быстрый запуск всего приложения
 
 ```bash
-cd backend
-npm run dev
-# Сервер поднимается на http://localhost:3001
+npm run dev:all
+# Backend: http://localhost:3001
+# Frontend: http://localhost:5173
 ```
 
-## 6. Запуск фронтенда
+## 6. Раздельный запуск frontend/backend
 
 ```bash
+# backend
+cd backend
+npm run dev
+
+# frontend
 cd frontend
 npm run dev
-# Vite запускается на http://localhost:5173
-# API проксируется на http://localhost:3001
 ```
 
 ## 7. Первый вход
 
 Откройте `http://localhost:5173` и войдите с учётными данными из `ADMIN_USERNAME` / `ADMIN_PASSWORD`.
 
-## 8. Настройка SMTP (опционально)
+## 8. Аналитика
+
+В проекте нет зависимости от Metabase или другого внешнего BI-инструмента. Аналитика доступна внутри приложения и строится на SQL views из `db/bi_views.sql`.
+
+## 9. Настройка SMTP (опционально)
 
 Если нужна отправка email локально — используйте [Mailpit](https://github.com/axllent/mailpit) или аналогичный SMTP-catching сервер:
 
@@ -77,7 +84,7 @@ docker run -d -p 1025:1025 -p 8025:8025 axllent/mailpit
 
 Веб-интерфейс Mailpit: `http://localhost:8025`
 
-## 9. Импорт справочников (опционально)
+## 10. Импорт справочников (опционально)
 
 Если есть доступ к эталонной БД:
 

@@ -8,13 +8,14 @@
 
 | Уровень | Технологии |
 |---|---|
-| Frontend | React 18, Vite, Vanilla CSS, `@glideapps/glide-data-grid` |
+| Frontend | React 18, Vite, Tailwind CSS, shadcn/ui, `@glideapps/glide-data-grid` |
 | Backend | Node.js v24+ (`"type": "module"`), Fastify v5 |
 | База данных | PostgreSQL 15, нативный драйвер `pg` (параметризованные запросы, без ORM) |
 | Email | Nodemailer (SMTP-настройки хранятся в таблице `settings`) |
 | Auth | `@fastify/jwt` (HttpOnly cookie), `bcryptjs` |
 | Rate limiting | `@fastify/rate-limit` (только публичные endpoint'ы) |
 | Миграции БД | `node-pg-migrate` |
+| Аналитика | Встроенная SPA-страница аналитики + SQL views (`db/bi_views.sql`) |
 | Инфраструктура | Docker Compose |
 
 ## 2. Архитектурная схема (мультитенантность)
@@ -77,9 +78,10 @@ ProcessMeter/
 │       │   ├── admin/
 │       │   │   ├── UserManagement.jsx
 │       │   │   └── SettingsPage.jsx
+│       │   ├── AnalyticsPage.jsx
 │       │   └── RespondentView.jsx
 │       └── styles.css
-├── db/                            # Эталонные схемы и справочная документация
+├── db/                            # Эталонные схемы, BI views и справочная документация
 ├── docs/                          # Техническая документация
 └── docker-compose.yml
 ```
@@ -110,6 +112,7 @@ ProcessMeter/
 ### Database (PostgreSQL)
 - **`refdb`** — эталонная БД (справочники: `process_1..4`, `systems`, `executors`). В контуре интегратора.
 - **`mydb`** — рабочая БД заказчика (пользователи, доступы, ответы, токены, настройки).
+- **`db/bi_views.sql`** — SQL-представления для аналитической страницы и внешнего чтения BI-данных при необходимости.
 - Инициализация: применяются `migrations/` → `ensureAdminUser()` → администратор выдаёт права → `copy_operations_to_user_answers()`.
 
 ## 5. Архитектурные инварианты (ADR)

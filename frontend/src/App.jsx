@@ -44,18 +44,26 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 1500);
+
     const boot = async () => {
       try {
-        const me = await apiFetch('/api/auth/me');
+        const me = await apiFetch('/api/auth/me', { signal: controller.signal });
         setUser(me.user);
       } catch {
         setUser(null);
       } finally {
+        window.clearTimeout(timeoutId);
         setLoading(false);
       }
     };
 
     boot();
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
   }, []);
 
   const handleLogin = async (username, password) => {

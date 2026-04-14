@@ -13,7 +13,6 @@ if (process.env.DEBUG_ENV) {
     console.log('[ENV] Local .env result:', localEnv.error ? 'Not found/error' : 'Loaded');
     console.log('[ENV] Root .env path:', rootEnvPath);
     console.log('[ENV] Root .env result:', rootEnv.error ? 'Not found/error' : 'Loaded');
-    console.log('[ENV] METABASE_SECRET_KEY present:', !!process.env.METABASE_SECRET_KEY);
 }
 
 const JWT_SECRET_DEFAULT = 'dev-secret-change-me';

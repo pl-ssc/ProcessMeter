@@ -12,10 +12,11 @@
 ## Технологический стек
 
 *   **Backend**: Node.js (v24), Fastify (v5), PostgreSQL.
-*   **Frontend**: React 18, Vite, Vanilla CSS.
+*   **Frontend**: React 18, Vite, Tailwind CSS, shadcn/ui.
 *   **Email**: Nodemailer (SMTP, настраивается через интерфейс администратора).
 *   **DevOps**: Docker, Docker Compose.
 *   **Связь**: REST API, JWT-авторизация (HttpOnly cookie).
+*   **Аналитика**: встроенная аналитическая страница + SQL views из `db/bi_views.sql`.
 
 ## Структура проекта
 
@@ -33,8 +34,8 @@ ProcessMeter/
 │   └── migrations/       # Направленные миграции БД (node-pg-migrate)
 ├── frontend/             # Клиентская часть (React + Vite)
 │   └── src/
-│       ├── components/   # React-компоненты (LoginPage, SetPasswordPage, Admin*, Respondent*)
-│       └── styles.css    # Единая таблица стилей (тёмная тема)
+│       ├── components/   # React-компоненты (LoginPage, SetPasswordPage, Admin*, Analytics*, Respondent*)
+│       └── styles.css    # Базовые стили проекта
 ├── db/                   # Эталонные схемы и документация БД
 ├── docs/                 # Техническая документация
 └── docker-compose.yml
@@ -68,9 +69,22 @@ ProcessMeter/
     * Skeleton Loaders для плавной загрузки.
     * Встроенная тёмная тема; сохранение UI-состояния в `localStorage`.
 
-6.  **Производительность**:
+6.  **Встроенная аналитика**:
+    * Отдельная страница аналитики внутри приложения без зависимости от внешнего BI-инструмента.
+    * Серверные агрегаты и SQL-представления в `db/bi_views.sql`.
+    * Срезы по прогрессу опроса, трудозатратам, FTE, ИТ-системам и орг-структуре.
+7.  **Производительность**:
     * Пакетное обновление через `INSERT ... FROM unnest` (без N+1).
     * Кеш транспортера Nodemailer с инвалидацией при изменении SMTP-настроек.
+
+## Быстрый старт
+
+1. Скопируйте `.env.example` в `.env` и заполните минимум `TARGET_DATABASE_URL`, `JWT_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `APP_URL`.
+2. Установите зависимости: `npm install`, `npm --prefix backend install`, `npm --prefix frontend install`.
+3. Поднимите приложение локально: `npm run dev:all`.
+4. Откройте `http://localhost:5173`.
+
+Подробнее: [SETUP.md](/Users/romangaleev/CodeProject/ProcessLabs/ProcessMeter/docs/SETUP.md), [ARCHITECTURE.md](/Users/romangaleev/CodeProject/ProcessLabs/ProcessMeter/docs/ARCHITECTURE.md), [BI_ANALYTICS.md](/Users/romangaleev/CodeProject/ProcessLabs/ProcessMeter/docs/BI_ANALYTICS.md).
 
 ---
 Проект разработан командой ProcessLabs.
