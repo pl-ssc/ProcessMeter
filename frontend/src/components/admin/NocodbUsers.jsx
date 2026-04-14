@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Database, Loader2, Send, ShieldAlert, UserPlus } from 'lucide-react';
 import { apiFetch } from '../../api.js';
-import { Alert, AlertDescription } from '../ui/alert.jsx';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

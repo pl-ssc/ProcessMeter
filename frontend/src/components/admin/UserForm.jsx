@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Check } from 'lucide-react';
 import { apiFetch } from '../../api.js';
-import { Alert, AlertDescription } from '../ui/alert.jsx';
-import { ScrollArea } from '../ui/scroll-area.jsx';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';

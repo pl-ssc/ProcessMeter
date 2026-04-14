@@ -4,7 +4,6 @@ import { useAutoSave } from '../hooks/useAutoSave.js';
 import Header from './Header.jsx';
 import InfoPanel from './InfoPanel.jsx';
 import ProcessTree from './ProcessTree.jsx';
-import { Alert, AlertDescription } from './ui/alert.jsx';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,7 +13,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from './ui/alert-dialog.jsx';
+} from '@/components/ui/alert-dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const AnswerGrid = lazy(() => import('./AnswerGrid.jsx'));
