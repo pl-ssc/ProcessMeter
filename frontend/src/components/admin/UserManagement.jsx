@@ -318,6 +318,14 @@ export default function UserManagement() {
                               ) : null}
                             </div>
                             <div className="text-xs text-muted-foreground">{user.username}</div>
+                            {user.role === 'respondent' ? (
+                              <Badge
+                                variant={user.is_survey_completed ? 'success' : 'secondary'}
+                                className="mt-1 h-5 rounded-full px-2 py-0 text-[10px] font-medium uppercase tracking-wide"
+                              >
+                                {user.is_survey_completed ? 'Анкета завершена' : 'Анкета в работе'}
+                              </Badge>
+                            ) : null}
                           </div>
                         </div>
                       </TableCell>
