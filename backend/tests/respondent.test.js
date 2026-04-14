@@ -44,6 +44,16 @@ test('Respondent & Processes API', async (t) => {
             VALUES ($1, 10), ($1, 11)
         `, [userA.id]);
 
+        const processesResponse = await app.inject({
+            method: 'GET',
+            url: '/api/processes',
+            headers: { cookie: tokenA }
+        });
+
+        assert.strictEqual(processesResponse.statusCode, 200);
+        const processesBody = JSON.parse(processesResponse.payload);
+        assert.ok(processesBody.process_3.every((item) => item.process_1_id === 1), 'Should see only allowed process_1');
+
         const response = await app.inject({
             method: 'GET',
             url: '/api/answers',
@@ -56,6 +66,16 @@ test('Respondent & Processes API', async (t) => {
         // Убеждаемся, что возвращаются только разрешенные операции
         assert.ok(answers.some(a => a.operation_id === 10), 'Should see Operation 10');
         assert.ok(!answers.some(a => a.operation_id === 20), 'Should NOT see Operation 20');
+
+        const forbiddenResponse = await app.inject({
+            method: 'GET',
+            url: '/api/answers?process_3_id=2',
+            headers: { cookie: tokenA }
+        });
+
+        assert.strictEqual(forbiddenResponse.statusCode, 200);
+        const forbiddenBody = JSON.parse(forbiddenResponse.payload);
+        assert.strictEqual(forbiddenBody.answers.length, 0, 'Should not expose answers from hidden process');
     });
 
     await t.test('POST /api/answers/bulk - Saves data correctly', async () => {

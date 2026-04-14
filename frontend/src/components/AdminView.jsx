@@ -79,7 +79,7 @@ const PAGE_DESCRIPTIONS = {
   nocodb: 'Подключение и управление эталонной базой.',
 };
 
-export default function AdminView({ user, onLogout, isDark, onToggleTheme, onOpenAnalytics }) {
+export default function AdminView({ user, onLogout, isDark, onToggleTheme, onOpenAnalytics, onSwitchRole }) {
   const [activeTab, setActiveTab] = useState('users');
   const [selectedUserRole, setSelectedUserRole] = useState('respondent');
   const [selectedDictionarySection, setSelectedDictionarySection] = useState('departments');
@@ -101,6 +101,7 @@ export default function AdminView({ user, onLogout, isDark, onToggleTheme, onOpe
           onLogout={onLogout}
           isDark={isDark}
           onToggleTheme={onToggleTheme}
+          onSwitchRole={onSwitchRole}
         />
 
         <div className="flex min-h-0 flex-1">

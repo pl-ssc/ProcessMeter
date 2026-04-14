@@ -5,6 +5,7 @@ import Header from './Header.jsx';
 import { Badge } from './ui/badge.jsx';
 import { Button } from './ui/button.jsx';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card.jsx';
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu.jsx';
 import { Input } from './ui/input.jsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select.jsx';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table.jsx';
@@ -31,7 +32,7 @@ function colorVar(index) {
   return `hsl(var(--chart-${(index % 5) + 1}))`;
 }
 
-export default function AnalyticsPage({ user, onLogout, isDark, onToggleTheme, onBackToAdmin }) {
+export default function AnalyticsPage({ user, onLogout, isDark, onToggleTheme, onBackToAdmin, onSwitchRole }) {
   const [meta, setMeta] = useState(null);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -42,6 +43,7 @@ export default function AnalyticsPage({ user, onLogout, isDark, onToggleTheme, o
     profession_id: 'all',
     status: 'all',
   });
+  const [selectedProcessIds, setSelectedProcessIds] = useState([]);
 
   const loadAnalytics = async () => {
     setLoading(true);
@@ -51,6 +53,7 @@ export default function AnalyticsPage({ user, onLogout, isDark, onToggleTheme, o
       if (filters.department_id !== 'all') query.set('department_id', filters.department_id);
       if (filters.profession_id !== 'all') query.set('profession_id', filters.profession_id);
       if (filters.status !== 'all') query.set('status', filters.status);
+      if (selectedProcessIds.length > 0) query.set('process_1_ids', selectedProcessIds.join(','));
 
       const [metaResponse, dashboardResponse] = await Promise.all([
         apiFetch('/api/analytics/meta'),
@@ -68,7 +71,18 @@ export default function AnalyticsPage({ user, onLogout, isDark, onToggleTheme, o
 
   useEffect(() => {
     loadAnalytics();
-  }, [filters.department_id, filters.profession_id, filters.status]);
+  }, [filters.department_id, filters.profession_id, filters.status, selectedProcessIds.join(',')]);
+
+  useEffect(() => {
+    const allowedIds = (meta?.allowed_process_1_ids || []).map((value) => Number(value)).filter((value) => Number.isFinite(value));
+    if (allowedIds.length === 0) return;
+
+    setSelectedProcessIds((current) => {
+      const currentSet = new Set(current.map((value) => Number(value)));
+      const next = allowedIds.filter((value) => currentSet.has(value));
+      return next.length > 0 ? next : allowedIds;
+    });
+  }, [meta?.allowed_process_1_ids?.join(',')]);
 
   const filteredRespondents = useMemo(() => {
     if (!data?.respondents) return [];
@@ -89,7 +103,7 @@ export default function AnalyticsPage({ user, onLogout, isDark, onToggleTheme, o
 
   return (
     <div className="flex h-full flex-col">
-      <Header user={user} onLogout={onLogout} isDark={isDark} onToggleTheme={onToggleTheme} />
+      <Header user={user} onLogout={onLogout} isDark={isDark} onToggleTheme={onToggleTheme} onSwitchRole={onSwitchRole} />
       <main className="min-h-0 flex-1 overflow-auto p-4 md:p-6">
         <div className="space-y-6">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
@@ -110,6 +124,11 @@ export default function AnalyticsPage({ user, onLogout, isDark, onToggleTheme, o
             </div>
 
             <div className="grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-2 xl:grid-cols-4">
+              <ProcessScopeSelect
+                processes={meta?.process_level_1 || []}
+                selectedProcessIds={selectedProcessIds}
+                onChange={setSelectedProcessIds}
+              />
               <FilterSelect
                 label="Подразделение"
                 value={filters.department_id}
@@ -459,6 +478,66 @@ function FilterSelect({ label, value, onChange, options }) {
           ))}
         </SelectContent>
       </Select>
+    </div>
+  );
+}
+
+function ProcessScopeSelect({ processes, selectedProcessIds, onChange }) {
+  const defaultSelected = processes.map((process) => Number(process.id)).filter((value) => Number.isFinite(value));
+  const normalizedSelected = selectedProcessIds.length > 0
+    ? selectedProcessIds.map((value) => Number(value)).filter((value) => Number.isFinite(value))
+    : defaultSelected;
+  const allSelected = processes.length > 0 && normalizedSelected.length === processes.length;
+  const label = processes.length <= 1
+    ? processes[0]?.name || 'Нет доступа'
+    : allSelected
+      ? 'Все доступные процессы'
+      : `Выбрано: ${normalizedSelected.length} из ${processes.length}`;
+
+  if (processes.length <= 1) {
+    return (
+      <div className="space-y-2">
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Процесс</div>
+        <Badge variant="secondary" className="w-full justify-center rounded-lg px-3 py-2 text-sm">
+          {processes[0]?.name || 'Нет доступных процессов'}
+        </Badge>
+      </div>
+    );
+  }
+
+  const toggleProcess = (id) => {
+    const next = normalizedSelected.includes(id)
+      ? normalizedSelected.filter((value) => value !== id)
+      : [...normalizedSelected, id];
+
+    if (next.length === 0) return;
+    onChange(next);
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Процессы</div>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" className="w-full justify-between">
+            <span className="truncate">{label}</span>
+            <Filter className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-72">
+          <DropdownMenuLabel>Доступные процессы</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {processes.map((process) => (
+            <DropdownMenuCheckboxItem
+              key={process.id}
+              checked={normalizedSelected.includes(Number(process.id))}
+              onCheckedChange={() => toggleProcess(Number(process.id))}
+            >
+              {process.name}
+            </DropdownMenuCheckboxItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

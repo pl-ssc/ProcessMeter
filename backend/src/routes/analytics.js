@@ -10,7 +10,7 @@ function round(value, digits = 2) {
 }
 
 function buildRespondentWhere(filters) {
-    const conditions = [`u.role = 'respondent'`];
+    const conditions = [`u.roles @> ARRAY['respondent']::text[]`];
     const params = [];
 
     if (filters.department_id) {
@@ -38,12 +38,103 @@ function topItems(items, limit, sortKey) {
         .slice(0, limit);
 }
 
+function shiftPlaceholders(sql, offset) {
+    return sql.replace(/\$(\d+)/g, (_, index) => `$${Number(index) + offset}`);
+}
+
+function parseProcessIds(value) {
+    if (!value) return [];
+    const raw = Array.isArray(value) ? value : String(value).split(',');
+    return [...new Set(raw
+        .flatMap((item) => String(item).split(','))
+        .map((item) => Number(item))
+        .filter((item) => Number.isFinite(item) && item > 0))];
+}
+
+async function resolveProcessScope(request, reply) {
+    const isAdmin = request.user?.role === 'admin';
+    const activeProcessIds = (await query(
+        `SELECT id
+         FROM process_1
+         WHERE is_active IS DISTINCT FROM false
+         ORDER BY COALESCE(sort, 0), f1_name`
+    )).rows.map((row) => row.id);
+    const activeProcessSet = new Set(activeProcessIds);
+    const allowedProcessIds = isAdmin
+        ? activeProcessIds
+        : (request.user?.process_1_access || [])
+            .map((value) => Number(value))
+            .filter((value) => Number.isFinite(value) && activeProcessSet.has(value));
+
+    if (!isAdmin && allowedProcessIds.length === 0) {
+        reply.code(403).send({ error: 'forbidden' });
+        return null;
+    }
+
+    const requestedIds = parseProcessIds(request.query?.process_1_ids);
+    let selectedProcessIds = requestedIds.length > 0 ? requestedIds : allowedProcessIds;
+
+    if (!isAdmin) {
+        const allowedSet = new Set(allowedProcessIds);
+        if (selectedProcessIds.some((processId) => !allowedSet.has(processId))) {
+            reply.code(403).send({ error: 'forbidden' });
+            return null;
+        }
+        selectedProcessIds = selectedProcessIds.filter((processId) => allowedSet.has(processId));
+    }
+
+    if (selectedProcessIds.length === 0) {
+        reply.code(403).send({ error: 'forbidden' });
+        return null;
+    }
+
+    return {
+        allowedProcessIds,
+        selectedProcessIds,
+        isAdmin,
+    };
+}
+
+function buildScopedUsersCte(scopeParamIndex, filters) {
+    const { where, params } = buildRespondentWhere(filters);
+
+    return {
+        sql: `WITH scoped_users AS (
+                SELECT DISTINCT
+                    u.id,
+                    u.username,
+                    u.full_name,
+                    u.created_at AS invitation_at,
+                    u.is_survey_completed,
+                    u.survey_completed_at AS completion_at,
+                    u.department_id,
+                    u.profession_id
+                FROM users u
+                JOIN user_process_1_access upa
+                  ON upa.user_id = u.id
+                 AND upa.process_1_id = ANY($${scopeParamIndex}::int[])
+                WHERE ${shiftPlaceholders(where, 1)}
+            )`,
+        params,
+    };
+}
+
 export default async function analyticsRoutes(fastify) {
-    fastify.get('/meta', { preHandler: [fastify.authenticate, fastify.requireAnalyticsRole] }, async () => {
+    fastify.get('/meta', { preHandler: [fastify.authenticate, fastify.requireAnalyticsRole] }, async (request, reply) => {
+        const scope = await resolveProcessScope(request, reply);
+        if (!scope) return;
+
         const [{ rows: departments }, { rows: professions }, { rows: process1 }, { rows: systems }, { rows: executors }] = await Promise.all([
             query(`SELECT id, name FROM departments WHERE is_active IS DISTINCT FROM false ORDER BY name`),
             query(`SELECT id, name FROM professions WHERE is_active IS DISTINCT FROM false ORDER BY name`),
-            query(`SELECT id, f1_name AS name FROM process_1 WHERE is_active IS DISTINCT FROM false ORDER BY COALESCE(sort, 0), f1_name`),
+            query(
+                `SELECT id, f1_name AS name
+                   FROM process_1
+                  WHERE is_active IS DISTINCT FROM false
+                    AND id = ANY($1::int[])
+                  ORDER BY COALESCE(sort, 0), f1_name`,
+                [scope.allowedProcessIds]
+            ),
             query(`SELECT system_id AS id, system_name AS name FROM systems WHERE is_active IS DISTINCT FROM false ORDER BY system_name`),
             query(`SELECT id, name FROM executors ORDER BY name`)
         ]);
@@ -54,42 +145,53 @@ export default async function analyticsRoutes(fastify) {
             process_level_1: process1,
             systems,
             executors,
+            allowed_process_1_ids: scope.allowedProcessIds,
+            selected_process_1_ids: scope.selectedProcessIds,
         };
     });
 
-    fastify.get('/dashboard', { preHandler: [fastify.authenticate, fastify.requireAnalyticsRole] }, async (request) => {
-        const { where, params } = buildRespondentWhere(request.query || {});
+    fastify.get('/dashboard', { preHandler: [fastify.authenticate, fastify.requireAnalyticsRole] }, async (request, reply) => {
+        const scope = await resolveProcessScope(request, reply);
+        if (!scope) return;
+
+        const { sql: cte, params: filterParams } = buildScopedUsersCte(1, request.query || {});
         const fteDivisor = Number(process.env.FTE_DIVISOR ?? 165);
         const safeDivisor = Number.isFinite(fteDivisor) && fteDivisor > 0 ? fteDivisor : 165;
+        const scopedParams = [scope.selectedProcessIds, ...filterParams];
 
         const respondentsPromise = query(
-            `SELECT
-                u.id AS user_id,
-                u.username,
-                u.full_name,
-                u.created_at AS invitation_at,
-                u.is_survey_completed,
-                u.survey_completed_at AS completion_at,
+            `${cte}
+             SELECT
+                su.id AS user_id,
+                su.username,
+                su.full_name,
+                su.invitation_at,
+                su.is_survey_completed,
+                su.completion_at,
                 d.name AS department_name,
                 p.name AS profession_name,
-                COUNT(ua.id)::int AS total_operations,
-                COUNT(*) FILTER (WHERE ua.labor_hours IS NOT NULL)::int AS filled_operations,
-                COALESCE(SUM(ua.labor_hours), 0) AS total_labor_hours,
-                MIN(ua.updated_at) FILTER (WHERE ua.labor_hours IS NOT NULL) AS first_answer_at
-             FROM users u
-             LEFT JOIN departments d ON d.id = u.department_id
-             LEFT JOIN professions p ON p.id = u.profession_id
-             LEFT JOIN user_answers ua ON ua.user_id = u.id
-             WHERE ${where}
-             GROUP BY u.id, d.name, p.name
-             ORDER BY u.full_name NULLS LAST, u.username`,
-            params
+                COUNT(ua.id) FILTER (WHERE p1.id = ANY($1::int[]))::int AS total_operations,
+                COUNT(*) FILTER (WHERE p1.id = ANY($1::int[]) AND ua.labor_hours IS NOT NULL)::int AS filled_operations,
+                COALESCE(SUM(ua.labor_hours) FILTER (WHERE p1.id = ANY($1::int[])), 0) AS total_labor_hours,
+                MIN(ua.updated_at) FILTER (WHERE p1.id = ANY($1::int[]) AND ua.labor_hours IS NOT NULL) AS first_answer_at
+             FROM scoped_users su
+             LEFT JOIN departments d ON d.id = su.department_id
+             LEFT JOIN professions p ON p.id = su.profession_id
+             LEFT JOIN user_answers ua ON ua.user_id = su.id
+             LEFT JOIN process_4 p4 ON p4.id = ua.process_4_id AND p4.is_active IS DISTINCT FROM false
+             LEFT JOIN process_3 p3 ON p3.id = p4.process_3_id
+             LEFT JOIN process_2 p2 ON p2.id = p3.process_2_id
+             LEFT JOIN process_1 p1 ON p1.id = p2.process_1_id
+             GROUP BY su.id, d.name, p.name
+             ORDER BY su.full_name NULLS LAST, su.username`,
+            scopedParams
         );
 
         const answersPromise = query(
-            `SELECT
-                u.id AS user_id,
-                u.full_name,
+            `${cte}
+             SELECT
+                su.id AS user_id,
+                su.full_name,
                 d.name AS department_name,
                 p.name AS profession_name,
                 p1.f1_name AS process_level_1,
@@ -102,19 +204,18 @@ export default async function analyticsRoutes(fastify) {
                 ua.note,
                 ua.updated_at AS answer_updated_at
              FROM user_answers ua
-             JOIN users u ON u.id = ua.user_id
-             LEFT JOIN departments d ON d.id = u.department_id
-             LEFT JOIN professions p ON p.id = u.profession_id
+             JOIN scoped_users su ON su.id = ua.user_id
+             LEFT JOIN departments d ON d.id = su.department_id
+             LEFT JOIN professions p ON p.id = su.profession_id
              JOIN process_4 p4 ON p4.id = ua.process_4_id
              JOIN process_3 p3 ON p3.id = p4.process_3_id
              JOIN process_2 p2 ON p2.id = p3.process_2_id
-             JOIN process_1 p1 ON p1.id = p2.process_1_id
+             JOIN process_1 p1 ON p1.id = p2.process_1_id AND p1.id = ANY($1::int[])
              LEFT JOIN executors e ON e.id = p4.executor_id
              LEFT JOIN systems s ON s.system_id = ua.system_id
-             WHERE ${where.replaceAll('u.', 'u.')}
-               AND ua.labor_hours IS NOT NULL
+             WHERE ua.labor_hours IS NOT NULL
              ORDER BY ua.updated_at DESC NULLS LAST`,
-            params
+            scopedParams
         );
 
         const [respondentsResult, answersResult] = await Promise.all([respondentsPromise, answersPromise]);

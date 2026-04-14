@@ -20,4 +20,10 @@ export default fp(async (fastify, opts) => {
             reply.code(403).send({ error: 'forbidden' });
         }
     });
+
+    fastify.decorate('requireRespondentRole', async (request, reply) => {
+        if (request.user?.role !== 'respondent') {
+            reply.code(403).send({ error: 'forbidden' });
+        }
+    });
 });

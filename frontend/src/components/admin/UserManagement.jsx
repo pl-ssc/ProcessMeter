@@ -225,7 +225,8 @@ export default function UserManagement({ role = 'respondent' }) {
   const showAccessColumn = selectedRole !== 'admin';
   const showSurveyStatusColumn = selectedRole === 'respondent';
   const getDeleteDisabledReason = (user) => {
-    if (user.can_delete === false && user.role === 'admin') {
+    const userRoles = Array.isArray(user.roles) ? user.roles : [user.role].filter(Boolean);
+    if (user.can_delete === false && userRoles.includes('admin')) {
       return 'Нельзя удалить последнего администратора';
     }
 
@@ -379,7 +380,7 @@ export default function UserManagement({ role = 'respondent' }) {
                                 <KeyRound className="h-4 w-4" />
                                 Сбросить пароль
                               </DropdownMenuItem>
-                              {user.role === 'respondent' && user.is_survey_completed ? (
+                              {(Array.isArray(user.roles) ? user.roles : [user.role]).includes('respondent') && user.is_survey_completed ? (
                                 <DropdownMenuItem
                                   onClick={() => openUnlockDialog(user)}
                                   disabled={actionLoading[`${user.id}_unlock-completion`]}

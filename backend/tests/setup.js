@@ -49,10 +49,10 @@ export async function clearDB() {
 export async function createTestUser({ email, password, role = 'respondent', isActive = true }) {
     const hash = await bcrypt.hash(password, 2); // Быстрый хэш для тестов
     const { rows } = await pool.query(
-        `INSERT INTO users (username, password_hash, full_name, role, is_active, password_changed_at)
-         VALUES ($1, $2, $3, $4, $5, now() - interval '1 second')
-         RETURNING id, username, full_name, role, is_active`,
-        [email, hash, 'Test User', role, isActive]
+        `INSERT INTO users (username, password_hash, full_name, role, roles, active_role, is_active, password_changed_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, now() - interval '1 second')
+         RETURNING id, username, full_name, role, roles, active_role, is_active`,
+        [email, hash, 'Test User', role, [role], role, isActive]
     );
     return rows[0];
 }
@@ -64,7 +64,9 @@ export async function getAuthCookie(app, user) {
     const token = app.jwt.sign({
         sub: user.id,
         email: user.username,
-        role: user.role
+        role: user.active_role || user.role,
+        active_role: user.active_role || user.role,
+        roles: user.roles || [user.role]
     }, { expiresIn: '12h' });
 
     return `pm_token=${token}`;

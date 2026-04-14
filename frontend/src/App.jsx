@@ -108,6 +108,32 @@ export default function App() {
     }
   };
 
+  const handleSwitchRole = async (nextRole) => {
+    const currentRole = user?.active_role || user?.role;
+    if (!user || nextRole === currentRole) return;
+
+    if (currentRole === 'respondent' && nextRole !== 'respondent') {
+      const shouldSwitch = window.confirm('Переключить режим? Несохранённые изменения в режиме респондента могут быть потеряны.');
+      if (!shouldSwitch) return;
+    }
+
+    try {
+      const response = await apiFetch('/api/auth/switch-role', {
+        method: 'POST',
+        body: JSON.stringify({ role: nextRole }),
+      });
+      setUser(response.user);
+
+      if (nextRole === 'respondent') {
+        navigate('/', { replace: true });
+      } else {
+        navigate('/analytics', { replace: true });
+      }
+    } catch (error) {
+      setLoginError(error.message || 'Не удалось переключить режим');
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await apiFetch('/api/auth/logout', { method: 'POST' });
@@ -126,11 +152,16 @@ export default function App() {
 
   useEffect(() => {
     if (!user) return;
-    if (user.role === 'auditor' && pathname !== '/analytics') {
+    const activeRole = user.active_role || user.role;
+    if (activeRole === 'auditor' && pathname !== '/analytics') {
       navigate('/analytics', { replace: true });
       return;
     }
-    if (user.role === 'respondent' && pathname === '/analytics') {
+    if (activeRole === 'respondent' && pathname === '/analytics') {
+      navigate('/', { replace: true });
+      return;
+    }
+    if (activeRole === 'admin' && pathname !== '/' && pathname !== '/analytics') {
       navigate('/', { replace: true });
     }
   }, [user, pathname]);
@@ -174,7 +205,9 @@ export default function App() {
     );
   }
 
-  if (user.role === 'admin') {
+  const activeRole = user.active_role || user.role;
+
+  if (activeRole === 'admin') {
     if (pathname === '/analytics') {
       return (
         <Suspense fallback={<AppSkeleton />}>
@@ -184,24 +217,25 @@ export default function App() {
             isDark={isDark}
             onToggleTheme={() => setIsDark((value) => !value)}
             onBackToAdmin={() => navigate('/')}
+            onSwitchRole={handleSwitchRole}
           />
         </Suspense>
       );
     }
 
-    return <AdminView user={user} onLogout={handleLogout} isDark={isDark} onToggleTheme={() => setIsDark((value) => !value)} onOpenAnalytics={() => navigate('/analytics')} />;
+    return <AdminView user={user} onLogout={handleLogout} isDark={isDark} onToggleTheme={() => setIsDark((value) => !value)} onOpenAnalytics={() => navigate('/analytics')} onSwitchRole={handleSwitchRole} />;
   }
 
-  if (user.role === 'auditor') {
+  if (activeRole === 'auditor') {
     if (pathname !== '/analytics') return <AppSkeleton />;
 
     return (
       <Suspense fallback={<AppSkeleton />}>
-        <AnalyticsPage user={user} onLogout={handleLogout} isDark={isDark} onToggleTheme={() => setIsDark((value) => !value)} />
+        <AnalyticsPage user={user} onLogout={handleLogout} isDark={isDark} onToggleTheme={() => setIsDark((value) => !value)} onSwitchRole={handleSwitchRole} />
       </Suspense>
     );
   }
   if (pathname === '/analytics') return <AppSkeleton />;
 
-  return <RespondentView user={user} onLogout={handleLogout} isDark={isDark} onToggleTheme={() => setIsDark((value) => !value)} />;
+  return <RespondentView user={user} onLogout={handleLogout} isDark={isDark} onToggleTheme={() => setIsDark((value) => !value)} onSwitchRole={handleSwitchRole} />;
 }

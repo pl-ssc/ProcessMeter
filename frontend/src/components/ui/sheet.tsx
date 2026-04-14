@@ -71,9 +71,10 @@ function SheetContent({
             <Button
               variant="ghost"
               className="absolute top-3 right-3"
-              size="icon-sm"
+              size="icon"
             >
               <XIcon
+                data-icon="inline-start"
               />
               <span className="sr-only">Close</span>
             </Button>

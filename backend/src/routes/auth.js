@@ -3,6 +3,7 @@ import pool, { query } from '../db/index.js';
 import { createToken, validateToken, markTokenUsed, deleteToken } from '../services/tokenService.js';
 import { sendPasswordLinkEmail } from '../services/emailService.js';
 import { env } from '../config/env.js';
+import { buildSessionUser, normalizeRoles, pickActiveRole } from '../services/userRoles.js';
 
 const DEMO_USERS = {
     admin: {
@@ -43,10 +44,10 @@ async function ensureDemoUser(role) {
         } else {
             const passwordHash = await bcrypt.hash(`demo-${role}-login`, 10);
             const { rows } = await client.query(
-                `INSERT INTO users (username, password_hash, full_name, role, is_active, password_changed_at)
-                 VALUES ($1, $2, $3, $4, true, now())
-                 RETURNING id, username, full_name, role`,
-                [template.username, passwordHash, template.full_name, template.role]
+                `INSERT INTO users (username, password_hash, full_name, role, roles, active_role, is_active, password_changed_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, true, now())
+                 RETURNING id, username, full_name, role, roles, active_role`,
+                [template.username, passwordHash, template.full_name, template.role, [template.role], template.role]
             );
             user = rows[0];
         }
@@ -81,6 +82,24 @@ async function ensureDemoUser(role) {
     }
 }
 
+async function loadSessionPayload(userId) {
+    const session = await pool.query(
+        `SELECT id, username, full_name, role, roles, active_role
+         FROM users
+         WHERE id = $1`,
+        [userId]
+    );
+    const userRow = session.rows[0];
+    if (!userRow) return null;
+
+    const { rows: accessRows } = await pool.query(
+        'SELECT process_1_id FROM user_process_1_access WHERE user_id = $1 ORDER BY process_1_id',
+        [userId]
+    );
+
+    return buildSessionUser(userRow, accessRows.map((row) => row.process_1_id));
+}
+
 export default async function authRoutes(fastify, options) {
     // ── Login ────────────────────────────────────────────────────────────────
     fastify.post('/login', {
@@ -98,7 +117,7 @@ export default async function authRoutes(fastify, options) {
         const { username, password } = request.body;
 
         const { rows } = await query(
-            'SELECT id, username, password_hash, full_name, is_active, role FROM users WHERE username = $1',
+            'SELECT id, username, password_hash, full_name, is_active, role, roles, active_role FROM users WHERE username = $1',
             [username]
         );
         const user = rows[0];
@@ -111,9 +130,13 @@ export default async function authRoutes(fastify, options) {
             return reply.code(401).send({ error: 'invalid credentials' });
         }
 
+        const sessionUser = await loadSessionPayload(user.id);
+        if (!sessionUser) {
+            return reply.code(401).send({ error: 'invalid credentials' });
+        }
         const token = fastify.jwt.sign({
             sub: user.id, username: user.username,
-            full_name: user.full_name, role: user.role
+            full_name: user.full_name, role: sessionUser.role, active_role: sessionUser.active_role, roles: sessionUser.roles
         });
         reply.setCookie('pm_token', token, {
             path: '/',
@@ -122,7 +145,7 @@ export default async function authRoutes(fastify, options) {
             sameSite: 'lax',
             maxAge: 60 * 60 * 24 * 7
         });
-        return { user: { id: user.id, username: user.username, full_name: user.full_name, role: user.role } };
+        return { user: sessionUser };
     });
 
     fastify.post('/demo-login', {
@@ -145,7 +168,9 @@ export default async function authRoutes(fastify, options) {
             sub: user.id,
             username: user.username,
             full_name: user.full_name,
-            role: user.role
+            role: user.active_role || user.role,
+            active_role: user.active_role || user.role,
+            roles: user.roles || [user.role]
         });
 
         reply.setCookie('pm_token', token, {
@@ -157,7 +182,7 @@ export default async function authRoutes(fastify, options) {
         });
 
         return {
-            user: { id: user.id, username: user.username, full_name: user.full_name, role: user.role }
+            user: await loadSessionPayload(user.id)
         };
     });
 
@@ -170,6 +195,53 @@ export default async function authRoutes(fastify, options) {
     // ── Me ───────────────────────────────────────────────────────────────────
     fastify.get('/me', { preHandler: [fastify.authenticate] }, async (request) => {
         return { user: request.user };
+    });
+
+    fastify.post('/switch-role', {
+        preHandler: [fastify.authenticate],
+        schema: {
+            body: {
+                type: 'object',
+                properties: {
+                    role: { type: 'string', enum: ['admin', 'auditor', 'respondent'] }
+                },
+                required: ['role']
+            }
+        }
+    }, async (request, reply) => {
+        const nextRole = request.body.role;
+        const currentRoles = normalizeRoles(request.user?.roles, request.user?.role);
+        if (!currentRoles.includes(nextRole)) {
+            return reply.code(403).send({ error: 'forbidden' });
+        }
+
+        await query(
+            'UPDATE users SET active_role = $1 WHERE id = $2',
+            [nextRole, request.user.sub]
+        );
+
+        const sessionUser = await loadSessionPayload(request.user.sub);
+        if (!sessionUser) {
+            return reply.code(401).send({ error: 'unauthorized' });
+        }
+        const token = fastify.jwt.sign({
+            sub: sessionUser.id,
+            username: sessionUser.username,
+            full_name: sessionUser.full_name,
+            role: sessionUser.role,
+            active_role: sessionUser.active_role,
+            roles: sessionUser.roles,
+        });
+
+        reply.setCookie('pm_token', token, {
+            path: '/',
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 60 * 60 * 24 * 7
+        });
+
+        return { user: sessionUser };
     });
 
     // ── Forgot password (public, rate-limited) ───────────────────────────────

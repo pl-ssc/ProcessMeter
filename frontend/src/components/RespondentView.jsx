@@ -19,7 +19,7 @@ import { Skeleton } from './ui/skeleton.jsx';
 
 const AnswerGrid = lazy(() => import('./AnswerGrid.jsx'));
 
-export default function RespondentView({ user, onLogout, isDark, onToggleTheme }) {
+export default function RespondentView({ user, onLogout, isDark, onToggleTheme, onSwitchRole }) {
   const [systems, setSystems] = useState([]);
   const [processes, setProcesses] = useState([]);
   const [selectedF3Index, setSelectedF3Index] = useState('');
@@ -233,6 +233,7 @@ export default function RespondentView({ user, onLogout, isDark, onToggleTheme }
         hasChanges={dirtyMap.size > 0}
         isDark={isDark}
         onToggleTheme={onToggleTheme}
+        onSwitchRole={onSwitchRole}
       />
       <InfoPanel stats={stats} onSubmit={handleSubmit} hasChanges={dirtyMap.size > 0} />
       {notice ? (

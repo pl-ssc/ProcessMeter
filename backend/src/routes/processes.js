@@ -26,14 +26,30 @@ export default async function processesRoutes(fastify, options) {
         return rows.length > 0;
     }
 
-    fastify.get('/systems', { preHandler: [fastify.authenticate] }, async () => {
+    async function userHasProcess4Access(client, userId, process4Id) {
+        const { rows } = await client.query(
+            `SELECT 1
+               FROM process_4 p4
+               JOIN process_3 p3 ON p3.id = p4.process_3_id
+               JOIN process_2 p2 ON p2.id = p3.process_2_id
+               JOIN user_process_1_access upa ON upa.process_1_id = p2.process_1_id
+              WHERE p4.id = $2
+                AND upa.user_id = $1
+              LIMIT 1`,
+            [userId, process4Id]
+        );
+
+        return rows.length > 0;
+    }
+
+    fastify.get('/systems', { preHandler: [fastify.authenticate, fastify.requireRespondentRole] }, async () => {
         const { rows } = await query(
             'SELECT system_id, system_name FROM systems WHERE is_active IS DISTINCT FROM false ORDER BY system_name'
         );
         return { systems: rows };
     });
 
-    fastify.get('/processes', { preHandler: [fastify.authenticate] }, async (request) => {
+    fastify.get('/processes', { preHandler: [fastify.authenticate, fastify.requireRespondentRole] }, async (request) => {
         const userId = request.user.sub;
         const { rows } = await query(
             `SELECT 
@@ -65,6 +81,7 @@ export default async function processesRoutes(fastify, options) {
        FROM process_3 p3
        LEFT JOIN process_2 p2 ON p2.id = p3.process_2_id
        LEFT JOIN process_1 p1 ON p1.id = p2.process_1_id
+       JOIN user_process_1_access upa ON upa.user_id = $1 AND upa.process_1_id = p1.id
        WHERE p3.is_active IS DISTINCT FROM false
        ORDER BY COALESCE(p1.sort, 0), COALESCE(p2.sort, 0), COALESCE(p3.sort, 0), p3.f3_name`,
             [userId]
@@ -72,7 +89,7 @@ export default async function processesRoutes(fastify, options) {
         return { process_3: rows };
     });
 
-    fastify.get('/answers', { preHandler: [fastify.authenticate] }, async (request) => {
+    fastify.get('/answers', { preHandler: [fastify.authenticate, fastify.requireRespondentRole] }, async (request) => {
         const userId = request.user.sub;
         const { process_3_id } = request.query || {};
 
@@ -115,6 +132,7 @@ export default async function processesRoutes(fastify, options) {
                    LEFT JOIN process_3 p3 ON p3.id = p4.process_3_id
                    LEFT JOIN process_2 p2 ON p2.id = p3.process_2_id
                    LEFT JOIN process_1 p1 ON p1.id = p2.process_1_id
+                   JOIN user_process_1_access upa ON upa.user_id = $1 AND upa.process_1_id = p1.id
                    LEFT JOIN executors e ON e.id = p4.executor_id
                   WHERE ua.user_id = $1
                     AND p4.is_active IS DISTINCT FROM false
@@ -149,6 +167,7 @@ export default async function processesRoutes(fastify, options) {
                    JOIN process_3 p3 ON p3.id = uao.process_3_id
                    LEFT JOIN process_2 p2 ON p2.id = p3.process_2_id
                    LEFT JOIN process_1 p1 ON p1.id = p2.process_1_id
+                   JOIN user_process_1_access upa ON upa.user_id = $1 AND upa.process_1_id = p1.id
                   WHERE uao.user_id = $1
                     ${customFilter}
                ) answers
@@ -160,7 +179,7 @@ export default async function processesRoutes(fastify, options) {
     });
 
     fastify.post('/answers/bulk', {
-        preHandler: [fastify.authenticate],
+        preHandler: [fastify.authenticate, fastify.requireRespondentRole],
         schema: {
             body: {
                 type: 'object',
@@ -215,6 +234,27 @@ export default async function processesRoutes(fastify, options) {
 
                 if (!item.operation_id) continue;
                 catalogItems.push({ operation_id: Number(item.operation_id), ...normalized });
+            }
+
+            for (const item of catalogItems) {
+                const hasAccess = await userHasProcess4Access(client, userId, item.operation_id);
+                if (!hasAccess) {
+                    await client.query('ROLLBACK');
+                    return reply.code(403).send({ error: 'Access denied for the selected process.' });
+                }
+            }
+
+            for (const item of customItems) {
+                const { rows: customRows } = await client.query(
+                    'SELECT process_3_id FROM user_added_operations WHERE id = $1 AND user_id = $2',
+                    [item.custom_operation_id, userId]
+                );
+                const process3Id = customRows[0]?.process_3_id;
+                const hasAccess = process3Id ? await userHasProcess3Access(client, userId, process3Id) : false;
+                if (!hasAccess) {
+                    await client.query('ROLLBACK');
+                    return reply.code(403).send({ error: 'Access denied for the selected process.' });
+                }
             }
 
             if (catalogItems.length > 0) {
@@ -273,7 +313,7 @@ export default async function processesRoutes(fastify, options) {
     });
 
     fastify.post('/answers/custom', {
-        preHandler: [fastify.authenticate],
+        preHandler: [fastify.authenticate, fastify.requireRespondentRole],
         schema: {
             body: {
                 type: 'object',
@@ -321,7 +361,7 @@ export default async function processesRoutes(fastify, options) {
         }
     });
 
-    fastify.delete('/answers/custom/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    fastify.delete('/answers/custom/:id', { preHandler: [fastify.authenticate, fastify.requireRespondentRole] }, async (request, reply) => {
         const userId = request.user.sub;
         const client = await pool.connect();
 
@@ -346,7 +386,7 @@ export default async function processesRoutes(fastify, options) {
         }
     });
 
-    fastify.post('/answers/complete', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    fastify.post('/answers/complete', { preHandler: [fastify.authenticate, fastify.requireRespondentRole] }, async (request, reply) => {
         const userId = request.user.sub;
 
         const client = await pool.connect();
@@ -390,7 +430,7 @@ export default async function processesRoutes(fastify, options) {
         }
     });
 
-    fastify.get('/user/stats', { preHandler: [fastify.authenticate] }, async (request) => {
+    fastify.get('/user/stats', { preHandler: [fastify.authenticate, fastify.requireRespondentRole] }, async (request) => {
         const userId = request.user.sub;
 
         const { rows: stats } = await query(

@@ -33,6 +33,8 @@ test('Auth & Security API', async (t) => {
         assert.strictEqual(response.statusCode, 200, 'Status should be 200');
         const body = JSON.parse(response.payload);
         assert.strictEqual(body.user.username, 'test@example.com');
+        assert.deepStrictEqual(body.user.roles, ['respondent']);
+        assert.strictEqual(body.user.active_role, 'respondent');
 
         let cookies = response.headers['set-cookie'];
         if (!Array.isArray(cookies)) cookies = [cookies];
@@ -107,6 +109,51 @@ test('Auth & Security API', async (t) => {
         assert.strictEqual(response.statusCode, 200, 'Analyst should access analytics routes');
     });
 
+    await t.test('POST /api/auth/switch-role - updates active role for multi-role user', async () => {
+        await pool.query(`
+            INSERT INTO process_1 (id, f1_name, is_active) VALUES (1, 'Process 1', true)
+        `);
+
+        const user = await createTestUser({ email: 'dual@example.com', password: 'password123', role: 'respondent' });
+        await pool.query(
+            `UPDATE users
+                SET roles = ARRAY['respondent', 'auditor']::text[],
+                    active_role = 'respondent'
+              WHERE id = $1`,
+            [user.id]
+        );
+        await pool.query('INSERT INTO user_process_1_access (user_id, process_1_id) VALUES ($1, 1)', [user.id]);
+
+        const authCookie = await getAuthCookie(app, { ...user, roles: ['respondent', 'auditor'], active_role: 'respondent' });
+
+        const switchResponse = await app.inject({
+            method: 'POST',
+            url: '/api/auth/switch-role',
+            headers: { cookie: authCookie },
+            payload: { role: 'auditor' }
+        });
+
+        assert.strictEqual(switchResponse.statusCode, 200);
+        const switchBody = JSON.parse(switchResponse.payload);
+        assert.strictEqual(switchBody.user.active_role, 'auditor');
+        assert.ok(switchBody.user.roles.includes('respondent'));
+        assert.ok(switchBody.user.roles.includes('auditor'));
+
+        const analyticsCookieHeader = switchResponse.headers['set-cookie'];
+        let analyticsCookie = Array.isArray(analyticsCookieHeader) ? analyticsCookieHeader[0] : analyticsCookieHeader;
+        analyticsCookie = analyticsCookie.split(';')[0];
+
+        const analyticsResponse = await app.inject({
+            method: 'GET',
+            url: '/api/analytics/meta',
+            headers: {
+                cookie: analyticsCookie
+            }
+        });
+
+        assert.strictEqual(analyticsResponse.statusCode, 200, 'Switched analyst should access analytics routes');
+    });
+
     await t.test('Role Guards - respondent cannot access analytics routes', async () => {
         const respondent = await createTestUser({ email: 'resp-analytics@example.com', password: 'password123', role: 'respondent' });
         const authCookie = await getAuthCookie(app, respondent);
@@ -133,8 +180,8 @@ test('Auth & Security API', async (t) => {
             await pool.query(`INSERT INTO process_4 (id, process_3_id, f4_name) VALUES (1111, 111, 'Operation 1'), (2111, 211, 'Operation 2')`);
 
             await pool.query(
-                `INSERT INTO users (username, password_hash, full_name, role, is_active, password_changed_at)
-                 VALUES ($1, $2, $3, 'respondent', true, now())`,
+                `INSERT INTO users (username, password_hash, full_name, role, roles, active_role, is_active, password_changed_at)
+                 VALUES ($1, $2, $3, 'respondent', ARRAY['respondent']::text[], 'respondent', true, now())`,
                 [ 'demo-respondent@processmeter.local', await bcrypt.hash('demo-respondent-login', 2), 'Демо Респондент' ]
             );
 
