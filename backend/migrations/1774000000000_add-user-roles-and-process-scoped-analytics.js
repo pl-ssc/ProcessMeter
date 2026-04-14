@@ -1,6 +1,9 @@
-exports.shorthands = undefined;
+export const shorthands = undefined;
 
-exports.up = (pgm) => {
+/**
+ * @param pgm {import('node-pg-migrate').MigrationBuilder}
+ */
+export const up = (pgm) => {
     pgm.addColumn('users', {
         roles: { type: 'text[]', notNull: false },
         active_role: { type: 'text', notNull: false },
@@ -90,7 +93,10 @@ exports.up = (pgm) => {
     `);
 };
 
-exports.down = (pgm) => {
+/**
+ * @param pgm {import('node-pg-migrate').MigrationBuilder}
+ */
+export const down = (pgm) => {
     pgm.sql(`
         DROP VIEW IF EXISTS view_stats_respondents_detail;
         DROP VIEW IF EXISTS view_stats_completion_trend;
