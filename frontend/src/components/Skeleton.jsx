@@ -1,5 +1,5 @@
 import React from 'react';
-import { Skeleton as UiSkeleton } from './ui/skeleton.jsx';
+import { Skeleton as UiSkeleton } from '@/components/ui/skeleton';
 
 export function SkeletonText({ width = '100%', height = '1em', className = '' }) {
   return <UiSkeleton className={className} style={{ width, height }} />;

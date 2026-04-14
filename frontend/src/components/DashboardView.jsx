@@ -3,8 +3,8 @@ import { Clock3, Search } from 'lucide-react';
 import { apiFetch } from '../api.js';
 import { Badge } from './ui/badge.jsx';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card.jsx';
-import { Input } from './ui/input.jsx';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table.jsx';
+import { Input } from '@/components/ui/input';
 
 export default function DashboardView() {
   const [data, setData] = useState(null);

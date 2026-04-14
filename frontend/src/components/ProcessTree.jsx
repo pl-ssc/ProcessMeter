@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight, ChevronsDown, ChevronsUp, FileText, Search, X } from 'lucide-react';
-import { Button } from './ui/button.jsx';
-import { Input } from './ui/input.jsx';
 import { ScrollArea } from './ui/scroll-area.jsx';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 const ProcessTree = React.memo(function ProcessTree({ processes, selectedF3Index, onSelectF3 }) {
   const [expanded, setExpanded] = useState(() => {
