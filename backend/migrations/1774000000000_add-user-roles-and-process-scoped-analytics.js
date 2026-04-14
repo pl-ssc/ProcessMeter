@@ -72,24 +72,16 @@ export const up = (pgm) => {
         CREATE OR REPLACE VIEW view_stats_respondents_detail AS
         SELECT
             u.id as user_id,
-            u.username,
             u.full_name,
-            u.department_id,
             d.name as department_name,
-            u.profession_id,
-            p.name as profession_name,
             u.created_at as invite_date,
             u.survey_completed_at as completed_date,
             u.is_survey_completed,
-            COUNT(ua.id)::int as total_operations,
-            COUNT(*) FILTER (WHERE ua.labor_hours IS NOT NULL)::int as filled_operations,
-            COALESCE(SUM(ua.labor_hours), 0) as total_labor_hours
+            COALESCE((SELECT SUM(labor_hours) FROM user_answers WHERE user_id = u.id), 0) as total_labor_hours
         FROM users u
         LEFT JOIN departments d ON d.id = u.department_id
-        LEFT JOIN professions p ON p.id = u.profession_id
-        LEFT JOIN user_answers ua ON ua.user_id = u.id
         WHERE u.roles @> ARRAY['respondent']::text[]
-        GROUP BY u.id, d.name, p.name;
+        ORDER BY u.full_name;
     `);
 };
 
