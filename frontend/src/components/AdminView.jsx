@@ -83,8 +83,11 @@ export default function AdminView({ user, onLogout, isDark, onToggleTheme, onOpe
   return (
     <TooltipProvider delayDuration={120}>
       <SidebarProvider defaultOpen>
-        <Sidebar collapsible="none" className="border-r border-sidebar-border/70 bg-sidebar">
-          <SidebarHeader>
+        <Sidebar
+          collapsible="none"
+          className="sticky top-20 self-start h-[calc(100svh-5rem)] border-r border-sidebar-border/70 bg-sidebar"
+        >
+          <SidebarHeader className="!px-4 !pt-4 !pb-3">
             <div className="flex items-center justify-between gap-3 rounded-2xl border border-sidebar-border/70 bg-sidebar-accent/25 px-3 py-2">
               <div className="min-w-0">
                 <div className="text-[11px] uppercase tracking-[0.22em] text-sidebar-foreground/60">Console</div>
@@ -92,9 +95,9 @@ export default function AdminView({ user, onLogout, isDark, onToggleTheme, onOpe
               </div>
             </div>
           </SidebarHeader>
-          <SidebarSeparator />
-          <SidebarContent>
-            <SidebarGroup>
+          <SidebarSeparator className="!mx-4" />
+          <SidebarContent className="!gap-1 !pb-4">
+            <SidebarGroup className="!px-4 !py-3">
               <SidebarGroupLabel>Пользователи</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
@@ -140,9 +143,9 @@ export default function AdminView({ user, onLogout, isDark, onToggleTheme, onOpe
               </SidebarGroupContent>
             </SidebarGroup>
 
-            <SidebarSeparator />
+            <SidebarSeparator className="!mx-4" />
 
-            <SidebarGroup>
+            <SidebarGroup className="!px-4 !py-3">
               <SidebarGroupLabel>Разделы</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
