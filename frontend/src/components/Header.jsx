@@ -36,7 +36,6 @@ export default function Header({ user, onLogout, autoSaveStatus, isDark, onToggl
           <Separator orientation="vertical" className="hidden h-10 md:block" />
           <div className="min-w-0">
             <div className="truncate text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">ProcessLabs / ProcessMeter</div>
-            <div className="truncate text-base font-semibold text-foreground">{ORG_NAME}</div>
             <div className="truncate text-sm text-muted-foreground">Анализ трудоемкости операций</div>
           </div>
         </div>

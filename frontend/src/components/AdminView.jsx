@@ -86,10 +86,6 @@ export default function AdminView({ user, onLogout, isDark, onToggleTheme, onOpe
 
   const activeRoleLabel = USER_ROLE_ITEMS.find((item) => item.id === selectedUserRole)?.label || 'Респонденты';
   const activeDictionaryLabel = DICTIONARY_ITEMS.find((item) => item.id === selectedDictionarySection)?.label || 'Подразделения';
-  const sidebarHeaderLabel = activeTab === 'dictionaries' ? `Справочники · ${activeDictionaryLabel}` : PAGE_TITLES[activeTab] || 'Админ-панель';
-  const sidebarHeaderHint = activeTab === 'dictionaries'
-    ? 'Структура и классификаторы'
-    : PAGE_DESCRIPTIONS[activeTab] || 'Управление приложением.';
   const activePageTitle = activeTab === 'dictionaries'
     ? `Справочники · ${activeDictionaryLabel}`
     : PAGE_TITLES[activeTab] || 'Админ-панель';
@@ -99,172 +95,167 @@ export default function AdminView({ user, onLogout, isDark, onToggleTheme, onOpe
 
   return (
     <TooltipProvider delayDuration={120}>
-      <SidebarProvider defaultOpen>
-        <Sidebar
-          collapsible="none"
-          className="sticky top-[73px] self-start h-[calc(100svh-73px)] border-r border-sidebar-border bg-sidebar"
-        >
-          <SidebarHeader className="!px-4 !pt-4 !pb-3">
-            <div
-              className={cn(
-                'rounded-xl border px-3 py-3 transition-colors',
-                activeTab === 'dictionaries'
-                  ? 'border-sidebar-primary/25 bg-sidebar-primary/10 shadow-sm'
-                  : 'border-sidebar-border bg-card'
-              )}
-            >
-              <div className="min-w-0">
-                <div className="text-[11px] uppercase tracking-[0.22em] text-sidebar-foreground/60">ProcessLabs / Admin</div>
-                <div className="truncate text-sm font-semibold text-sidebar-foreground">Управление системой</div>
-                <div className="truncate text-[11px] uppercase tracking-[0.18em] text-sidebar-foreground/60">
-                  {sidebarHeaderLabel}
+      <SidebarProvider defaultOpen className="flex min-h-svh flex-col">
+        <Header
+          user={user}
+          onLogout={onLogout}
+          isDark={isDark}
+          onToggleTheme={onToggleTheme}
+        />
+
+        <div className="flex min-h-0 flex-1">
+          <Sidebar
+            collapsible="none"
+            className="sticky top-[73px] self-start h-[calc(100svh-73px)] border-r border-sidebar-border bg-sidebar"
+          >
+            <SidebarHeader className="!px-4 !pt-4 !pb-3">
+              <div
+                className={cn(
+                  'rounded-xl border px-3 py-3 transition-colors',
+                  activeTab === 'dictionaries'
+                    ? 'border-sidebar-primary/25 bg-sidebar-primary/10 shadow-sm'
+                    : 'border-sidebar-border bg-card'
+                )}
+              >
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-semibold text-sidebar-foreground">Управление системой</div>
                 </div>
               </div>
-              <div className="mt-2 text-xs text-sidebar-foreground/70">{sidebarHeaderHint}</div>
-            </div>
-          </SidebarHeader>
-          <SidebarSeparator className="!mx-4" />
-          <SidebarContent className="!gap-1 !pb-4">
-            <SidebarGroup className="!px-4 !py-3">
-              <SidebarGroupLabel>Пользователи</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={activeTab === 'users'}
-                      tooltip="Пользователи"
-                    >
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab('users')}
-                        className="flex w-full items-center gap-2"
-                      >
-                        <Users />
-                        <span>Все пользователи</span>
-                      </button>
-                    </SidebarMenuButton>
-                    <SidebarMenuSub>
-                      {USER_ROLE_ITEMS.map((item) => (
-                        <SidebarMenuSubItem key={item.id}>
-                          <SidebarMenuSubButton
-                            asChild
-                            isActive={activeTab === 'users' && selectedUserRole === item.id}
-                            className="pl-2"
-                          >
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setActiveTab('users');
-                                setSelectedUserRole(item.id);
-                              }}
-                              className="flex w-full items-center gap-2"
-                            >
-                              <span>{item.shortLabel}</span>
-                            </button>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))}
-                    </SidebarMenuSub>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-
+            </SidebarHeader>
             <SidebarSeparator className="!mx-4" />
-
-            <SidebarGroup className="!px-4 !py-3">
-              <SidebarGroupLabel>Справочники</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={activeTab === 'dictionaries'}
-                      tooltip="Справочники"
-                    >
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab('dictionaries')}
-                        className="flex w-full items-center gap-2"
+            <SidebarContent className="!gap-1 !pb-4">
+              <SidebarGroup className="!px-4 !py-3">
+                <SidebarGroupLabel>Пользователи</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={activeTab === 'users'}
+                        tooltip="Пользователи"
                       >
-                        <BookOpen />
-                        <span>Все справочники</span>
-                      </button>
-                    </SidebarMenuButton>
-                    <SidebarMenuSub>
-                      {DICTIONARY_ITEMS.map((item) => (
-                        <SidebarMenuSubItem key={item.id}>
-                          <SidebarMenuSubButton
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab('users')}
+                          className="flex w-full items-center gap-2"
+                        >
+                          <Users />
+                          <span>Все пользователи</span>
+                        </button>
+                      </SidebarMenuButton>
+                      <SidebarMenuSub>
+                        {USER_ROLE_ITEMS.map((item) => (
+                          <SidebarMenuSubItem key={item.id}>
+                            <SidebarMenuSubButton
+                              asChild
+                              isActive={activeTab === 'users' && selectedUserRole === item.id}
+                              className="pl-2"
+                            >
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveTab('users');
+                                  setSelectedUserRole(item.id);
+                                }}
+                                className="flex w-full items-center gap-2"
+                              >
+                                <span>{item.shortLabel}</span>
+                              </button>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        ))}
+                      </SidebarMenuSub>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+
+              <SidebarSeparator className="!mx-4" />
+
+              <SidebarGroup className="!px-4 !py-3">
+                <SidebarGroupLabel>Справочники</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={activeTab === 'dictionaries'}
+                        tooltip="Справочники"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab('dictionaries')}
+                          className="flex w-full items-center gap-2"
+                        >
+                          <BookOpen />
+                          <span>Все справочники</span>
+                        </button>
+                      </SidebarMenuButton>
+                      <SidebarMenuSub>
+                        {DICTIONARY_ITEMS.map((item) => (
+                          <SidebarMenuSubItem key={item.id}>
+                            <SidebarMenuSubButton
+                              asChild
+                              isActive={activeTab === 'dictionaries' && selectedDictionarySection === item.id}
+                              className="pl-2"
+                            >
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveTab('dictionaries');
+                                  setSelectedDictionarySection(item.id);
+                                }}
+                                className="flex w-full items-center gap-2"
+                              >
+                                <span>{item.label}</span>
+                              </button>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        ))}
+                      </SidebarMenuSub>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+
+              <SidebarSeparator className="!mx-4" />
+
+              <SidebarGroup className="!px-4 !py-3">
+                <SidebarGroupLabel>Разделы</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {MAIN_NAV_ITEMS.map((item) => {
+                      const isActive = activeTab === item.id;
+
+                      return (
+                        <SidebarMenuItem key={item.id}>
+                          <SidebarMenuButton
                             asChild
-                            isActive={activeTab === 'dictionaries' && selectedDictionarySection === item.id}
-                            className="pl-2"
+                            isActive={isActive}
+                            tooltip={item.label}
                           >
                             <button
                               type="button"
-                              onClick={() => {
-                                setActiveTab('dictionaries');
-                                setSelectedDictionarySection(item.id);
-                              }}
+                              onClick={() => setActiveTab(item.id)}
                               className="flex w-full items-center gap-2"
                             >
+                              <item.icon />
                               <span>{item.label}</span>
                             </button>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))}
-                    </SidebarMenuSub>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      );
+                    })}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            </SidebarContent>
+          </Sidebar>
 
-            <SidebarSeparator className="!mx-4" />
-
-            <SidebarGroup className="!px-4 !py-3">
-              <SidebarGroupLabel>Разделы</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {MAIN_NAV_ITEMS.map((item) => {
-                    const isActive = activeTab === item.id;
-
-                    return (
-                      <SidebarMenuItem key={item.id}>
-                        <SidebarMenuButton
-                          asChild
-                          isActive={isActive}
-                          tooltip={item.label}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => setActiveTab(item.id)}
-                            className="flex w-full items-center gap-2"
-                          >
-                            <item.icon />
-                            <span>{item.label}</span>
-                          </button>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  })}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
-        </Sidebar>
-
-        <div className="flex min-h-svh min-w-0 flex-1 flex-col overflow-hidden">
-          <Header
-            user={user}
-            onLogout={onLogout}
-            isDark={isDark}
-            onToggleTheme={onToggleTheme}
-          />
-
-          <div className="flex-1 overflow-auto p-4 md:p-6">
+          <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
+            <div className="h-full overflow-auto p-4 md:p-6">
             <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
               <div className="space-y-2">
-                <div className="text-sm uppercase tracking-[0.2em] text-muted-foreground">Control Center</div>
                 <div className="flex flex-wrap items-center gap-3">
                   <h1 className="text-3xl font-semibold tracking-tight">
                     {activePageTitle}
@@ -294,6 +285,7 @@ export default function AdminView({ user, onLogout, isDark, onToggleTheme, onOpe
               {activeTab === 'nocodb' ? <NocodbUsers /> : null}
             </Suspense>
           </div>
+        </div>
         </div>
       </SidebarProvider>
     </TooltipProvider>
