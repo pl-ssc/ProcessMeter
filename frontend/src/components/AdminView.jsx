@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 import UserManagement from './admin/UserManagement.jsx';
 
 const DataImport = lazy(() => import('./admin/DataImport.jsx'));
@@ -48,8 +49,12 @@ const USER_ROLE_ITEMS = [
   { id: 'admin', label: 'Администраторы', shortLabel: 'Администраторы' },
 ];
 
+const DICTIONARY_ITEMS = [
+  { id: 'departments', label: 'Подразделения' },
+  { id: 'professions', label: 'Профессии' },
+];
+
 const MAIN_NAV_ITEMS = [
-  { id: 'dictionaries', label: 'Справочники', icon: BookOpen },
   { id: 'dashboards', label: 'Аналитика', icon: LayoutDashboard },
   { id: 'settings', label: 'Настройки', icon: Settings },
   { id: 'import', label: 'Импорт данных', icon: Database },
@@ -77,8 +82,20 @@ const PAGE_DESCRIPTIONS = {
 export default function AdminView({ user, onLogout, isDark, onToggleTheme, onOpenAnalytics }) {
   const [activeTab, setActiveTab] = useState('users');
   const [selectedUserRole, setSelectedUserRole] = useState('respondent');
+  const [selectedDictionarySection, setSelectedDictionarySection] = useState('departments');
 
   const activeRoleLabel = USER_ROLE_ITEMS.find((item) => item.id === selectedUserRole)?.label || 'Респонденты';
+  const activeDictionaryLabel = DICTIONARY_ITEMS.find((item) => item.id === selectedDictionarySection)?.label || 'Подразделения';
+  const sidebarHeaderLabel = activeTab === 'dictionaries' ? `Справочники · ${activeDictionaryLabel}` : PAGE_TITLES[activeTab] || 'Админ-панель';
+  const sidebarHeaderHint = activeTab === 'dictionaries'
+    ? 'Структура и классификаторы'
+    : PAGE_DESCRIPTIONS[activeTab] || 'Управление приложением.';
+  const activePageTitle = activeTab === 'dictionaries'
+    ? `Справочники · ${activeDictionaryLabel}`
+    : PAGE_TITLES[activeTab] || 'Админ-панель';
+  const activePageDescription = activeTab === 'dictionaries'
+    ? `Управление справочником «${activeDictionaryLabel.toLowerCase()}».`
+    : PAGE_DESCRIPTIONS[activeTab] || 'Управление приложением.';
 
   return (
     <TooltipProvider delayDuration={120}>
@@ -88,11 +105,22 @@ export default function AdminView({ user, onLogout, isDark, onToggleTheme, onOpe
           className="sticky top-20 self-start h-[calc(100svh-5rem)] border-r border-sidebar-border/70 bg-sidebar"
         >
           <SidebarHeader className="!px-4 !pt-4 !pb-3">
-            <div className="flex items-center justify-between gap-3 rounded-2xl border border-sidebar-border/70 bg-sidebar-accent/25 px-3 py-2">
+            <div
+              className={cn(
+                'rounded-2xl border px-3 py-2 transition-colors',
+                activeTab === 'dictionaries'
+                  ? 'border-sidebar-primary/30 bg-sidebar-primary/10 shadow-sm'
+                  : 'border-sidebar-border/70 bg-sidebar-accent/25'
+              )}
+            >
               <div className="min-w-0">
                 <div className="text-[11px] uppercase tracking-[0.22em] text-sidebar-foreground/60">Console</div>
                 <div className="truncate text-sm font-semibold text-sidebar-foreground">Управление</div>
+                <div className="truncate text-[11px] uppercase tracking-[0.18em] text-sidebar-foreground/60">
+                  {sidebarHeaderLabel}
+                </div>
               </div>
+              <div className="mt-2 text-xs text-sidebar-foreground/70">{sidebarHeaderHint}</div>
             </div>
           </SidebarHeader>
           <SidebarSeparator className="!mx-4" />
@@ -133,6 +161,54 @@ export default function AdminView({ user, onLogout, isDark, onToggleTheme, onOpe
                               className="flex w-full items-center gap-2"
                             >
                               <span>{item.shortLabel}</span>
+                            </button>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+
+            <SidebarSeparator className="!mx-4" />
+
+            <SidebarGroup className="!px-4 !py-3">
+              <SidebarGroupLabel>Справочники</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={activeTab === 'dictionaries'}
+                      tooltip="Справочники"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('dictionaries')}
+                        className="flex w-full items-center gap-2"
+                      >
+                        <BookOpen />
+                        <span>Все справочники</span>
+                      </button>
+                    </SidebarMenuButton>
+                    <SidebarMenuSub>
+                      {DICTIONARY_ITEMS.map((item) => (
+                        <SidebarMenuSubItem key={item.id}>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={activeTab === 'dictionaries' && selectedDictionarySection === item.id}
+                            className="pl-2"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveTab('dictionaries');
+                                setSelectedDictionarySection(item.id);
+                              }}
+                              className="flex w-full items-center gap-2"
+                            >
+                              <span>{item.label}</span>
                             </button>
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
@@ -191,23 +267,27 @@ export default function AdminView({ user, onLogout, isDark, onToggleTheme, onOpe
                 <div className="text-sm uppercase tracking-[0.2em] text-muted-foreground">Админ-панель</div>
                 <div className="flex flex-wrap items-center gap-3">
                   <h1 className="text-3xl font-extrabold tracking-tight">
-                    {PAGE_TITLES[activeTab] || 'Админ-панель'}
+                    {activePageTitle}
                   </h1>
                   {activeTab === 'users' ? (
                     <Badge variant="secondary" className="rounded-full px-3 py-1 text-[11px] uppercase tracking-wide">
                       {activeRoleLabel}
                     </Badge>
+                  ) : activeTab === 'dictionaries' ? (
+                    <Badge variant="secondary" className="rounded-full px-3 py-1 text-[11px] uppercase tracking-wide">
+                      {activeDictionaryLabel}
+                    </Badge>
                   ) : null}
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {PAGE_DESCRIPTIONS[activeTab] || 'Управление приложением.'}
+                  {activePageDescription}
                 </p>
               </div>
             </div>
 
             <Suspense fallback={<div className="space-y-4"><Skeleton className="h-16 rounded-3xl" /><Skeleton className="h-80 rounded-3xl" /></div>}>
               {activeTab === 'users' ? <UserManagement role={selectedUserRole} /> : null}
-              {activeTab === 'dictionaries' ? <Dictionaries /> : null}
+              {activeTab === 'dictionaries' ? <Dictionaries key={selectedDictionarySection} type={selectedDictionarySection} /> : null}
               {activeTab === 'dashboards' ? <AnalyticsLinkCard onOpenAnalytics={onOpenAnalytics} /> : null}
               {activeTab === 'import' ? <DataImport /> : null}
               {activeTab === 'settings' ? <SmtpSettings /> : null}

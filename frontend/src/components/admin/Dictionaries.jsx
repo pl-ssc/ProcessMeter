@@ -4,12 +4,17 @@ import { apiFetch } from '../../api.js';
 import { Alert, AlertDescription } from '../ui/alert.jsx';
 import { Badge } from '../ui/badge.jsx';
 import { Button } from '../ui/button.jsx';
-import { Card, CardContent } from '../ui/card.jsx';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card.jsx';
 import { Input } from '../ui/input.jsx';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table.jsx';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs.jsx';
+
+const DICTIONARY_LABELS = {
+  departments: 'Подразделения',
+  professions: 'Профессии',
+};
 
 function DictionarySection({ type }) {
+  const sectionLabel = DICTIONARY_LABELS[type] || 'Справочник';
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -77,15 +82,24 @@ function DictionarySection({ type }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="relative max-w-sm flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Поиск по названию..." value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} className="pl-9" />
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div className="space-y-1">
+          <div className="text-sm uppercase tracking-[0.2em] text-muted-foreground">Справочник</div>
+          <div className="text-3xl font-extrabold tracking-tight">{sectionLabel}</div>
+          <div className="text-sm text-muted-foreground">
+            Управление записями справочника и их статусом.
+          </div>
         </div>
-        <Button onClick={() => setIsCreating(true)} disabled={isCreating}>
-          <Plus className="h-4 w-4" />
-          Добавить
-        </Button>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative min-w-[280px] max-w-sm flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input placeholder="Поиск по названию..." value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} className="pl-9" />
+          </div>
+          <Button onClick={() => setIsCreating(true)} disabled={isCreating}>
+            <Plus className="h-4 w-4" />
+            Добавить
+          </Button>
+        </div>
       </div>
 
       {error ? (
@@ -95,7 +109,15 @@ function DictionarySection({ type }) {
       ) : null}
 
       <Card>
-        <CardContent className="pt-6">
+        <CardHeader className="pb-4">
+          <CardTitle>{sectionLabel}</CardTitle>
+          <CardDescription>
+            {sectionLabel === 'Подразделения'
+              ? 'Список подразделений компании.'
+              : 'Список профессий и должностей компании.'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
@@ -191,19 +213,6 @@ function DictionarySection({ type }) {
   );
 }
 
-export default function Dictionaries() {
-  return (
-    <Tabs defaultValue="departments" className="space-y-4">
-      <TabsList>
-        <TabsTrigger value="departments">Подразделения</TabsTrigger>
-        <TabsTrigger value="professions">Профессии</TabsTrigger>
-      </TabsList>
-      <TabsContent value="departments">
-        <DictionarySection type="departments" />
-      </TabsContent>
-      <TabsContent value="professions">
-        <DictionarySection type="professions" />
-      </TabsContent>
-    </Tabs>
-  );
+export default function Dictionaries({ type = 'departments' }) {
+  return <DictionarySection key={type} type={type} />;
 }
