@@ -229,9 +229,9 @@ export default function UserForm({ user, defaultRole = 'respondent', onClose, on
 
   return (
     <Sheet open onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="w-full sm:max-w-4xl">
+      <SheetContent className="w-full sm:max-w-4xl p-0" side="right">
         <div className="flex h-full flex-col">
-          <SheetHeader className="border-b px-6 py-5">
+          <SheetHeader className="border-b px-6 py-5 text-left">
             <SheetTitle>{isEdit ? 'Редактирование пользователя' : 'Новый пользователь'}</SheetTitle>
             <SheetDescription>Профиль, роли и доступ к процессам 1 уровня.</SheetDescription>
           </SheetHeader>
@@ -401,7 +401,7 @@ export default function UserForm({ user, defaultRole = 'respondent', onClose, on
             </form>
           </ScrollArea>
 
-          <SheetFooter className="border-t px-6 py-4">
+          <SheetFooter className="border-t px-6 py-4 sm:justify-end">
             <div className="flex w-full items-center justify-end gap-3">
               <Button type="button" variant="outline" onClick={onClose}>
                 Отмена
