@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Edit, Ellipsis, Info, KeyRound, Loader2, Mail, Search, Trash2, Upload, UserCheck, UserMinus, UserPlus } from 'lucide-react';
+import { Edit, Ellipsis, Info, KeyRound, Loader2, Mail, Search, Trash2, Unlock, Upload, UserCheck, UserMinus, UserPlus } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { apiFetch } from '../../api.js';
 import { Alert, AlertDescription } from '../ui/alert.jsx';
@@ -8,10 +8,12 @@ import { Badge } from '../ui/badge.jsx';
 import { Button } from '../ui/button.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card.jsx';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu.jsx';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog.jsx';
 import { Input } from '../ui/input.jsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select.jsx';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table.jsx';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip.jsx';
+import { Textarea } from '../ui/textarea.jsx';
 import UserForm from './UserForm.jsx';
 
 const TOAST_DURATION_MS = 4000;
@@ -28,6 +30,8 @@ export default function UserManagement() {
   const fileInputRef = useRef(null);
   const [isImporting, setIsImporting] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+  const [userToUnlock, setUserToUnlock] = useState(null);
+  const [unlockReason, setUnlockReason] = useState('');
 
   useEffect(() => {
     loadUsers();
@@ -46,6 +50,11 @@ export default function UserManagement() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const openUnlockDialog = (user) => {
+    setUserToUnlock(user);
+    setUnlockReason('');
   };
 
   const showToast = (type, message) => {
@@ -90,6 +99,34 @@ export default function UserManagement() {
     try {
       await apiFetch(`/api/admin/users/${userId}/${action}`, { method: 'POST' });
       showToast('success', action === 'send-invite' ? 'Приглашение отправлено!' : 'Ссылка для сброса пароля отправлена!');
+    } catch (error) {
+      showToast('error', error.message);
+    } finally {
+      setActionLoading((previous) => ({ ...previous, [key]: false }));
+    }
+  };
+
+  const unlockCompletion = async () => {
+    if (!userToUnlock) return;
+
+    const reason = unlockReason.trim();
+    const key = `${userToUnlock.id}_unlock-completion`;
+    setActionLoading((previous) => ({ ...previous, [key]: true }));
+    try {
+      const response = await apiFetch(`/api/admin/users/${userToUnlock.id}/unlock-completion`, {
+        method: 'POST',
+        body: JSON.stringify({ reason }),
+      });
+
+      setUserToUnlock(null);
+      setUnlockReason('');
+      loadUsers();
+
+      if (response.notification_sent) {
+        showToast('success', 'Завершение снято, респондент снова может редактировать данные.');
+      } else {
+        showToast('warning', `Завершение снято, но письмо не отправлено: ${response.notification_error || 'проверьте SMTP-настройки.'}`);
+      }
     } catch (error) {
       showToast('error', error.message);
     } finally {
@@ -198,7 +235,7 @@ export default function UserManagement() {
     <TooltipProvider delayDuration={120}>
       <div className="space-y-4">
       {toast ? (
-        <Alert variant={toast.type === 'success' ? 'success' : 'destructive'}>
+        <Alert variant={toast.type === 'success' ? 'success' : toast.type === 'warning' ? 'warning' : 'destructive'}>
           <AlertDescription>{toast.message}</AlertDescription>
         </Alert>
       ) : null}
@@ -298,7 +335,7 @@ export default function UserManagement() {
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="outline" size="icon" className="h-9 w-9 rounded-xl">
-                                {actionLoading[`${user.id}_send-invite`] || actionLoading[`${user.id}_send-reset`] || actionLoading[`${user.id}_delete`]
+                                {actionLoading[`${user.id}_send-invite`] || actionLoading[`${user.id}_send-reset`] || actionLoading[`${user.id}_unlock-completion`] || actionLoading[`${user.id}_delete`]
                                   ? <Loader2 className="h-4 w-4 animate-spin" />
                                   : <Ellipsis className="h-4 w-4" />}
                               </Button>
@@ -322,6 +359,15 @@ export default function UserManagement() {
                                 <KeyRound className="h-4 w-4" />
                                 Сбросить пароль
                               </DropdownMenuItem>
+                              {user.role === 'respondent' && user.is_survey_completed ? (
+                                <DropdownMenuItem
+                                  onClick={() => openUnlockDialog(user)}
+                                  disabled={actionLoading[`${user.id}_unlock-completion`]}
+                                >
+                                  <Unlock className="h-4 w-4" />
+                                  Снять завершение
+                                </DropdownMenuItem>
+                              ) : null}
                               <DropdownMenuItem onClick={() => toggleUserStatus(user)}>
                                 {user.is_active ? <UserMinus className="h-4 w-4 text-destructive" /> : <UserCheck className="h-4 w-4 text-emerald-500" />}
                                 {user.is_active ? 'Заблокировать' : 'Разблокировать'}
@@ -380,6 +426,44 @@ export default function UserManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!userToUnlock} onOpenChange={(open) => !open && setUserToUnlock(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Снять завершение ввода?</DialogTitle>
+            <DialogDescription>
+              {userToUnlock
+                ? `Пользователь ${userToUnlock.full_name || userToUnlock.username} снова сможет редактировать ответы. Причина будет сохранена в логе событий, а респонденту уйдет письмо.`
+                : 'Причина будет сохранена в логе событий, а респонденту уйдет письмо.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <div className="text-sm font-medium">Причина разблокировки</div>
+            <Textarea
+              value={unlockReason}
+              onChange={(event) => setUnlockReason(event.target.value)}
+              placeholder="Например: требуется уточнение ответов после проверки"
+              className="min-h-28"
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setUserToUnlock(null)}
+              disabled={actionLoading[`${userToUnlock?.id}_unlock-completion`]}
+            >
+              Отмена
+            </Button>
+            <Button
+              onClick={unlockCompletion}
+              disabled={actionLoading[`${userToUnlock?.id}_unlock-completion`] || unlockReason.trim().length < 3}
+            >
+              {actionLoading[`${userToUnlock?.id}_unlock-completion`] ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Подтвердить
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       </div>
     </TooltipProvider>
   );

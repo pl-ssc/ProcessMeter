@@ -28,6 +28,7 @@ export async function clearDB() {
                 password_tokens, 
                 user_answers, 
                 user_added_operations,
+                survey_event_log,
                 settings, 
                 user_process_1_access,
                 process_1,

@@ -6,6 +6,7 @@ import pool from '../src/db/index.js';
 test('Admin API (Users, Settings, Import)', async (t) => {
     let app;
     let adminToken;
+    let adminUser;
 
     t.before(async () => {
         app = await buildTestApp();
@@ -13,8 +14,8 @@ test('Admin API (Users, Settings, Import)', async (t) => {
 
     t.beforeEach(async () => {
         await clearDB();
-        const admin = await createTestUser({ email: 'admin@test.com', password: '123', role: 'admin' });
-        adminToken = await getAuthCookie(app, admin);
+        adminUser = await createTestUser({ email: 'admin@test.com', password: '123', role: 'admin' });
+        adminToken = await getAuthCookie(app, adminUser);
     });
 
     t.after(async () => {
@@ -106,6 +107,54 @@ test('Admin API (Users, Settings, Import)', async (t) => {
         assert.strictEqual(listRes.statusCode, 200);
         const listBody = JSON.parse(listRes.payload);
         assert.ok(listBody.users.some((user) => user.username === 'analyst@test.com'));
+    });
+
+    await t.test('POST /api/admin/users/:id/unlock-completion - Reopens completed survey and logs reason', async () => {
+        const respondent = await createTestUser({ email: 'respondent@test.com', password: '123' });
+        const respondentToken = await getAuthCookie(app, respondent);
+
+        const completeRes = await app.inject({
+            method: 'POST',
+            url: '/api/answers/complete',
+            headers: { cookie: respondentToken }
+        });
+
+        assert.strictEqual(completeRes.statusCode, 200);
+
+        const unlockRes = await app.inject({
+            method: 'POST',
+            url: `/api/admin/users/${respondent.id}/unlock-completion`,
+            headers: { cookie: adminToken },
+            payload: {
+                reason: 'Проверка и уточнение ответов после ревью'
+            }
+        });
+
+        assert.strictEqual(unlockRes.statusCode, 200);
+        const body = JSON.parse(unlockRes.payload);
+        assert.strictEqual(body.ok, true);
+        assert.strictEqual(body.notification_sent, false);
+        assert.match(body.notification_error, /smtp/i);
+
+        const { rows: userRows } = await pool.query(
+            'SELECT is_survey_completed, survey_completed_at FROM users WHERE id = $1',
+            [respondent.id]
+        );
+        assert.strictEqual(userRows[0].is_survey_completed, false);
+        assert.strictEqual(userRows[0].survey_completed_at, null);
+
+        const { rows: events } = await pool.query(
+            `SELECT event_type, reason, actor_user_id
+               FROM survey_event_log
+              WHERE user_id = $1
+              ORDER BY created_at ASC, id ASC`,
+            [respondent.id]
+        );
+        assert.strictEqual(events.length, 2);
+        assert.strictEqual(events[0].event_type, 'survey_completed');
+        assert.strictEqual(events[1].event_type, 'survey_reopened');
+        assert.strictEqual(events[1].reason, 'Проверка и уточнение ответов после ревью');
+        assert.strictEqual(events[1].actor_user_id, adminUser.id);
     });
 
     await t.test('POST /api/admin/settings - Updates settings correctly', async () => {

@@ -73,6 +73,24 @@ const DEFAULT_SURVEY_COMPLETE_HTML = `
   </div>
 </div>`;
 
+const DEFAULT_SURVEY_REOPENED_SUBJECT = 'Доступ к анкете восстановлен в {{org_name}}';
+const DEFAULT_SURVEY_REOPENED_HTML = `
+<div style="margin:0;padding:32px 16px;background:#f3f6fb">
+  <div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #dbe4f0;border-radius:24px;overflow:hidden;font-family:Arial,Helvetica,sans-serif;color:#0f172a">
+    <div style="padding:32px 40px;background:linear-gradient(135deg,#2563eb 0%,#0f172a 100%);color:#ffffff">
+      <div style="font-size:12px;letter-spacing:0.18em;text-transform:uppercase;opacity:0.78">ProcessLabs</div>
+      <h1 style="margin:14px 0 0;font-size:30px;line-height:1.2;font-weight:700">Доступ к анкете восстановлен</h1>
+      <p style="margin:12px 0 0;font-size:16px;line-height:1.6;opacity:0.92">Администратор снова открыл возможность редактирования данных в {{org_name}}.</p>
+    </div>
+    <div style="padding:36px 40px">
+      <p style="margin:0 0 18px;font-size:16px;line-height:1.7">Здравствуйте, <strong>{{full_name}}</strong>!</p>
+      <p style="margin:0 0 18px;font-size:16px;line-height:1.7">Ввод данных снова доступен для редактирования.</p>
+      <p style="margin:0 0 18px;font-size:16px;line-height:1.7"><strong>Причина:</strong> {{reason}}</p>
+      <p style="margin:0;font-size:13px;line-height:1.6;color:#64748b">Вы можете вернуться в опрос и продолжить работу без потери ранее сохраненных ответов.</p>
+    </div>
+  </div>
+</div>`;
+
 /**
  * Loads all relevant settings from the DB in a single query.
  */
@@ -240,6 +258,25 @@ export async function sendSurveyCompleteEmail({ to, fullName }) {
         to,
         subject: renderTemplate(settings.email_survey_complete_subject || DEFAULT_SURVEY_COMPLETE_SUBJECT, vars),
         html: renderTemplate(settings.email_survey_complete_html || DEFAULT_SURVEY_COMPLETE_HTML, vars),
+    });
+}
+
+/**
+ * Sends a notification when an administrator re-opens a completed survey.
+ */
+export async function sendSurveyReopenedEmail({ to, fullName, reason }) {
+    if (!isValidEmail(to)) {
+        throw new Error(`Невалидный email-адрес: ${to}`);
+    }
+
+    const orgName = env.ORG_NAME || 'ProcessMeter';
+    const settings = await loadSettings('email_%');
+    const vars = { full_name: fullName, org_name: orgName, reason };
+
+    return sendMail({
+        to,
+        subject: renderTemplate(settings.email_survey_reopened_subject || DEFAULT_SURVEY_REOPENED_SUBJECT, vars),
+        html: renderTemplate(settings.email_survey_reopened_html || DEFAULT_SURVEY_REOPENED_HTML, vars),
     });
 }
 

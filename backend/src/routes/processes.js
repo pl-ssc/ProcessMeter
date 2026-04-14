@@ -1,4 +1,5 @@
 import pool, { query } from '../db/index.js';
+import { recordSurveyEvent } from '../services/surveyEventLog.js';
 
 export default async function processesRoutes(fastify, options) {
     async function ensureSurveyEditable(client, userId, reply, completedMessage) {
@@ -348,21 +349,45 @@ export default async function processesRoutes(fastify, options) {
     fastify.post('/answers/complete', { preHandler: [fastify.authenticate] }, async (request, reply) => {
         const userId = request.user.sub;
 
-        // Block if already complete
-        const { rows: userRows } = await query('SELECT is_survey_completed FROM users WHERE id = $1', [userId]);
-        if (userRows.length > 0 && userRows[0].is_survey_completed) {
-            return reply.code(403).send({ error: 'Survey is already completed and locked.' });
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+
+            const { rows: userRows } = await client.query(
+                'SELECT id, is_survey_completed FROM users WHERE id = $1 FOR UPDATE',
+                [userId]
+            );
+            if (userRows.length > 0 && userRows[0].is_survey_completed) {
+                await client.query('ROLLBACK');
+                return reply.code(403).send({ error: 'Survey is already completed and locked.' });
+            }
+
+            const { rows } = await client.query(
+                `UPDATE users
+                 SET is_survey_completed = true, survey_completed_at = now()
+                 WHERE id = $1 AND is_survey_completed = false
+                 RETURNING id`,
+                [userId]
+            );
+
+            if (rows.length > 0) {
+                await recordSurveyEvent(client, {
+                    userId,
+                    actorUserId: userId,
+                    eventType: 'survey_completed',
+                    payload: { source: 'user_complete_action' }
+                });
+            }
+
+            await client.query('COMMIT');
+            return { updated: rows.length };
+        } catch (err) {
+            await client.query('ROLLBACK');
+            request.log.error(err);
+            return reply.code(500).send({ error: 'complete survey failed' });
+        } finally {
+            client.release();
         }
-
-        const { rows } = await query(
-            `UPDATE users
-             SET is_survey_completed = true, survey_completed_at = now()
-             WHERE id = $1 AND is_survey_completed = false
-             RETURNING id`,
-            [userId]
-        );
-
-        return { updated: rows.length };
     });
 
     fastify.get('/user/stats', { preHandler: [fastify.authenticate] }, async (request) => {

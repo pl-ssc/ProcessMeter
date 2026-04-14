@@ -1,7 +1,8 @@
 import bcrypt from 'bcryptjs';
 import pool, { query } from '../../db/index.js';
 import { createToken, deleteToken } from '../../services/tokenService.js';
-import { sendPasswordLinkEmail, isValidEmail } from '../../services/emailService.js';
+import { sendPasswordLinkEmail, sendSurveyReopenedEmail, isValidEmail } from '../../services/emailService.js';
+import { recordSurveyEvent } from '../../services/surveyEventLog.js';
 import { createUser } from '../../services/userService.js';
 
 export default async function adminUsersRoutes(fastify, options) {
@@ -155,6 +156,109 @@ export default async function adminUsersRoutes(fastify, options) {
         }
 
         return { ok: true };
+    });
+
+    fastify.post('/:id/unlock-completion', {
+        preHandler: [fastify.authenticate, fastify.requireAdminRole],
+        schema: {
+            params: { type: 'object', properties: { id: { type: 'integer' } }, required: ['id'] },
+            body: {
+                type: 'object',
+                properties: {
+                    reason: { type: 'string', minLength: 3 }
+                },
+                required: ['reason']
+            }
+        }
+    }, async (request, reply) => {
+        const { id } = request.params;
+        const reason = request.body.reason.trim();
+        if (reason.length < 3) {
+            return reply.code(422).send({ error: 'Причина разблокировки должна содержать минимум 3 символа.' });
+        }
+        const adminId = request.user?.sub ? Number(request.user.sub) : null;
+        const client = await pool.connect();
+
+        let targetUser = null;
+        try {
+            await client.query('BEGIN');
+
+            const { rows: userRows } = await client.query(
+                `SELECT id, username, full_name, role, is_survey_completed, survey_completed_at
+                   FROM users
+                  WHERE id = $1
+                  FOR UPDATE`,
+                [id]
+            );
+
+            targetUser = userRows[0] || null;
+            if (!targetUser) {
+                await client.query('ROLLBACK');
+                return reply.code(404).send({ error: 'user not found' });
+            }
+
+            if (targetUser.role !== 'respondent') {
+                await client.query('ROLLBACK');
+                return reply.code(400).send({ error: 'Только респондента можно перевести обратно в режим редактирования.' });
+            }
+
+            if (!targetUser.is_survey_completed) {
+                await client.query('ROLLBACK');
+                return reply.code(409).send({ error: 'Survey is already unlocked.' });
+            }
+
+            await client.query(
+                `UPDATE users
+                    SET is_survey_completed = false,
+                        survey_completed_at = NULL
+                  WHERE id = $1`,
+                [id]
+            );
+
+            await recordSurveyEvent(client, {
+                userId: targetUser.id,
+                actorUserId: adminId,
+                eventType: 'survey_reopened',
+                reason,
+                payload: {
+                    previous_completed_at: targetUser.survey_completed_at,
+                    actor_role: request.user?.role || 'admin'
+                }
+            });
+
+            await client.query('COMMIT');
+        } catch (err) {
+            await client.query('ROLLBACK');
+            request.log.error(err);
+            return reply.code(500).send({ error: 'unlock completion failed' });
+        } finally {
+            client.release();
+        }
+
+        let notification_sent = false;
+        let notification_error = null;
+        try {
+            await sendSurveyReopenedEmail({
+                to: targetUser.username,
+                fullName: targetUser.full_name,
+                reason
+            });
+            notification_sent = true;
+        } catch (err) {
+            request.log.error(err, 'sendSurveyReopenedEmail failed');
+            notification_error = 'Письмо об отмене завершения не отправлено. Проверьте SMTP-настройки.';
+        }
+
+        return {
+            ok: true,
+            user: {
+                id: targetUser.id,
+                is_survey_completed: false,
+                survey_completed_at: null
+            },
+            notification_sent,
+            notification_error
+        };
     });
 
     fastify.delete('/:id', {
