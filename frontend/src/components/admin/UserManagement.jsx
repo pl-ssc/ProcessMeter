@@ -224,6 +224,7 @@ export default function UserManagement({ role = 'respondent' }) {
   const showProfessionColumn = selectedRole !== 'admin';
   const showAccessColumn = selectedRole !== 'admin';
   const showSurveyStatusColumn = selectedRole === 'respondent';
+  const canImportFromExcel = selectedRole === 'respondent';
   const getDeleteDisabledReason = (user) => {
     const userRoles = Array.isArray(user.roles) ? user.roles : [user.role].filter(Boolean);
     if (user.can_delete === false && userRoles.includes('admin')) {
@@ -268,11 +269,15 @@ export default function UserManagement({ role = 'respondent' }) {
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input placeholder="Поиск по имени или email..." value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} className="pl-9" />
             </div>
-            <input ref={fileInputRef} type="file" accept=".xlsx, .xls" className="hidden" onChange={handleFileUpload} />
-            <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isImporting}>
-              {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-              Импорт из Excel
-            </Button>
+            {canImportFromExcel ? (
+              <>
+                <input ref={fileInputRef} type="file" accept=".xlsx, .xls" className="hidden" onChange={handleFileUpload} />
+                <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isImporting}>
+                  {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  Импорт из Excel
+                </Button>
+              </>
+            ) : null}
             <Button onClick={() => { setEditingUser(null); setShowForm(true); }}>
               <UserPlus className="h-4 w-4" />
               Добавить пользователя

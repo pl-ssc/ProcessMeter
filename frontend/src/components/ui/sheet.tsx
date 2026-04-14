@@ -13,7 +13,7 @@ const SheetOverlay = React.forwardRef(({ className, ...props }, ref) => (
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      'fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+      'fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm',
       className
     )}
     {...props}
@@ -28,11 +28,11 @@ const SheetContent = React.forwardRef(({ className, children, side = 'right', sh
       ref={ref}
       data-side={side}
       className={cn(
-        'fixed z-50 flex h-full flex-col gap-4 border bg-background p-6 shadow-xl transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
-        side === 'right' && 'inset-y-0 right-0 w-full max-w-lg data-[state=open]:slide-in-from-right-96 data-[state=closed]:slide-out-to-right-96',
-        side === 'left' && 'inset-y-0 left-0 w-full max-w-lg data-[state=open]:slide-in-from-left-96 data-[state=closed]:slide-out-to-left-96',
-        side === 'top' && 'inset-x-0 top-0 h-auto data-[state=open]:slide-in-from-top-96 data-[state=closed]:slide-out-to-top-96',
-        side === 'bottom' && 'inset-x-0 bottom-0 h-auto data-[state=open]:slide-in-from-bottom-96 data-[state=closed]:slide-out-to-bottom-96',
+        'fixed z-[60] flex h-full flex-col gap-4 border bg-background p-6 shadow-xl',
+        side === 'right' && 'inset-y-0 right-0 w-full max-w-lg',
+        side === 'left' && 'inset-y-0 left-0 w-full max-w-lg',
+        side === 'top' && 'inset-x-0 top-0 h-auto',
+        side === 'bottom' && 'inset-x-0 bottom-0 h-auto',
         className
       )}
       {...props}
