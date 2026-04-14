@@ -21,11 +21,6 @@ const ROLE_LABELS = {
   auditor: 'Аналитики',
   respondent: 'Респонденты',
 };
-const ROLE_BADGE_LABELS = {
-  admin: 'Администратор',
-  auditor: 'Аналитик',
-  respondent: 'Респондент',
-};
 const ROLE_ORDER = {
   admin: 0,
   auditor: 1,
@@ -225,8 +220,10 @@ export default function UserManagement({ role = 'respondent' }) {
     }
   };
 
-  const roleLabel = (roleValue) => ROLE_BADGE_LABELS[roleValue] || 'Респондент';
-  const roleVariant = (role) => (role === 'admin' ? 'destructive' : role === 'auditor' ? 'warning' : 'default');
+  const showDepartmentColumn = selectedRole !== 'admin';
+  const showProfessionColumn = selectedRole !== 'admin';
+  const showAccessColumn = selectedRole !== 'admin';
+  const showSurveyStatusColumn = selectedRole === 'respondent';
   const getDeleteDisabledReason = (user) => {
     if (user.can_delete === false && user.role === 'admin') {
       return 'Нельзя удалить последнего администратора';
@@ -295,26 +292,32 @@ export default function UserManagement({ role = 'respondent' }) {
                         hint="ФИО и email пользователя в выбранной роли."
                       />
                     </TableHead>
-                    <TableHead>
-                      <HeaderHint label="Роль" hint="Роль определяет набор прав в системе: администратор, аналитик или респондент." />
-                    </TableHead>
-                    <TableHead>
-                      <HeaderHint label="Подразделение" hint="Подразделение пользователя из справочника компании." />
-                    </TableHead>
-                    <TableHead>
-                      <HeaderHint label="Профессия" hint="Профессия или должность пользователя из справочника." />
-                    </TableHead>
-                    <TableHead>
-                      <HeaderHint label="Доступы" hint="Количество процессов 1 уровня, к которым у пользователя есть доступ." />
-                    </TableHead>
+                    {showDepartmentColumn ? (
+                      <TableHead>
+                        <HeaderHint label="Подразделение" hint="Подразделение пользователя из справочника компании." />
+                      </TableHead>
+                    ) : null}
+                    {showProfessionColumn ? (
+                      <TableHead>
+                        <HeaderHint label="Профессия" hint="Профессия или должность пользователя из справочника." />
+                      </TableHead>
+                    ) : null}
+                    {showAccessColumn ? (
+                      <TableHead>
+                        <HeaderHint label="Доступы" hint="Количество процессов 1 уровня, к которым у пользователя есть доступ." />
+                      </TableHead>
+                    ) : null}
                     <TableHead>
                       <HeaderHint
-                        label="Статус"
-                        hint={selectedRole === 'respondent'
-                          ? 'Активность учетной записи и статус анкеты респондента.'
-                          : 'Статус учетной записи: активен — может входить, заблокирован — вход запрещен.'}
+                        label="Статус пользователя"
+                        hint="Статус учетной записи: активен — может входить, заблокирован — вход запрещен."
                       />
                     </TableHead>
+                    {showSurveyStatusColumn ? (
+                      <TableHead>
+                        <HeaderHint label="Статус анкеты" hint="Текущий статус заполнения анкеты респондента." />
+                      </TableHead>
+                    ) : null}
                     <TableHead className="text-right">Действия</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -334,25 +337,19 @@ export default function UserManagement({ role = 'respondent' }) {
                           </div>
                         </div>
                       </TableCell>
+                      {showDepartmentColumn ? <TableCell>{user.department_name || '—'}</TableCell> : null}
+                      {showProfessionColumn ? <TableCell>{user.profession_name || '—'}</TableCell> : null}
+                      {showAccessColumn ? <TableCell>{user.access_count} процессов</TableCell> : null}
                       <TableCell>
-                        <Badge variant={roleVariant(user.role)}>{roleLabel(user.role)}</Badge>
+                        <Badge variant={user.is_active ? 'success' : 'secondary'}>{user.is_active ? 'Активен' : 'Заблокирован'}</Badge>
                       </TableCell>
-                      <TableCell>{user.department_name || '—'}</TableCell>
-                      <TableCell>{user.profession_name || '—'}</TableCell>
-                      <TableCell>{user.access_count} процессов</TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Badge variant={user.is_active ? 'success' : 'secondary'}>{user.is_active ? 'Активен' : 'Заблокирован'}</Badge>
-                          {selectedRole === 'respondent' ? (
-                            <Badge
-                              variant={user.is_survey_completed ? 'success' : 'secondary'}
-                              className="h-5 rounded-full px-2 py-0 text-[10px] font-medium uppercase tracking-wide"
-                            >
-                              {user.is_survey_completed ? 'Анкета завершена' : 'Анкета в работе'}
-                            </Badge>
-                          ) : null}
-                        </div>
-                      </TableCell>
+                      {showSurveyStatusColumn ? (
+                        <TableCell>
+                          <Badge variant={user.is_survey_completed ? 'success' : 'secondary'}>
+                            {user.is_survey_completed ? 'Анкета завершена' : 'Анкета в работе'}
+                          </Badge>
+                        </TableCell>
+                      ) : null}
                       <TableCell>
                         <div className="flex justify-end">
                           <DropdownMenu>
