@@ -24,7 +24,6 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
-  SidebarInset,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -32,9 +31,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarProvider,
-  SidebarRail,
   SidebarSeparator,
-  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -86,7 +83,7 @@ export default function AdminView({ user, onLogout, isDark, onToggleTheme, onOpe
   return (
     <TooltipProvider delayDuration={120}>
       <SidebarProvider defaultOpen>
-        <Sidebar variant="inset" collapsible="icon">
+        <Sidebar collapsible="none" className="border-r border-sidebar-border/70 bg-sidebar">
           <SidebarHeader>
             <div className="flex items-center justify-between gap-3 rounded-2xl border border-sidebar-border/70 bg-sidebar-accent/25 px-3 py-2">
               <div className="min-w-0">
@@ -175,16 +172,14 @@ export default function AdminView({ user, onLogout, isDark, onToggleTheme, onOpe
               </SidebarGroupContent>
             </SidebarGroup>
           </SidebarContent>
-          <SidebarRail />
         </Sidebar>
 
-        <SidebarInset className="flex min-h-svh flex-col overflow-hidden">
+        <div className="flex min-h-svh min-w-0 flex-1 flex-col overflow-hidden">
           <Header
             user={user}
             onLogout={onLogout}
             isDark={isDark}
             onToggleTheme={onToggleTheme}
-            leftAction={<SidebarTrigger />}
           />
 
           <div className="flex-1 overflow-auto p-6">
@@ -216,7 +211,7 @@ export default function AdminView({ user, onLogout, isDark, onToggleTheme, onOpe
               {activeTab === 'nocodb' ? <NocodbUsers /> : null}
             </Suspense>
           </div>
-        </SidebarInset>
+        </div>
       </SidebarProvider>
     </TooltipProvider>
   );
