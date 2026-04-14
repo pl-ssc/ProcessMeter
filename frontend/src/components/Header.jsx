@@ -2,11 +2,9 @@ import React from 'react';
 import { CheckCircle2, ChevronDown, Cloud, LogOut, Moon, Sun } from 'lucide-react';
 import { Avatar, AvatarFallback } from './ui/avatar.jsx';
 import { Badge } from './ui/badge.jsx';
-import { Button } from './ui/button.jsx';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu.jsx';
-import { Separator } from './ui/separator.jsx';
-
-const ORG_NAME = import.meta.env.VITE_ORG_NAME || 'ProcessMeter';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Separator } from '@/components/ui/separator';
 
 const ROLE_LABELS = {
   admin: 'Администратор',

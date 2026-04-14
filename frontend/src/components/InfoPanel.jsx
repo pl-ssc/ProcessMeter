@@ -1,15 +1,8 @@
 import React, { useState } from 'react';
 import { Activity, BriefcaseBusiness, Clock3, Info, Send } from 'lucide-react';
 import { Badge } from './ui/badge.jsx';
-import { Button } from './ui/button.jsx';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from './ui/dialog.jsx';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export default function InfoPanel({ stats, onSubmit, hasChanges }) {
   const { total_hours = 0, fte = 0, status = 'not_started' } = stats;

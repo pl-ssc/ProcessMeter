@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { Eye, EyeOff, Loader2, Mail, Save, Wifi } from 'lucide-react';
 import { apiFetch } from '../../api.js';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert.jsx';
-import { Button } from '../ui/button.jsx';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card.jsx';
-import { Input } from '../ui/input.jsx';
 import { Label } from '../ui/label.jsx';
 import { Switch } from '../ui/switch.jsx';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 const DEFAULT_STATE = {
   smtp_host: '',

@@ -15,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from './ui/alert-dialog.jsx';
-import { Skeleton } from './ui/skeleton.jsx';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const AnswerGrid = lazy(() => import('./AnswerGrid.jsx'));
 

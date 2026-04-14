@@ -3,13 +3,13 @@ import { Database, Loader2, Send, ShieldAlert, UserPlus } from 'lucide-react';
 import { apiFetch } from '../../api.js';
 import { Alert, AlertDescription } from '../ui/alert.jsx';
 import { Badge } from '../ui/badge.jsx';
-import { Button } from '../ui/button.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card.jsx';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog.jsx';
-import { Input } from '../ui/input.jsx';
 import { Label } from '../ui/label.jsx';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select.jsx';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table.jsx';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function NocodbUsers() {
   const [users, setUsers] = useState([]);

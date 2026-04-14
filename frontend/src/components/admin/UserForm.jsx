@@ -3,13 +3,13 @@ import { Check } from 'lucide-react';
 import { apiFetch } from '../../api.js';
 import { Alert, AlertDescription } from '../ui/alert.jsx';
 import { Badge } from '../ui/badge.jsx';
-import { Button } from '../ui/button.jsx';
-import { Input } from '../ui/input.jsx';
 import { Label } from '../ui/label.jsx';
 import { ScrollArea } from '../ui/scroll-area.jsx';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select.jsx';
-import { Separator } from '../ui/separator.jsx';
-import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '../ui/sheet.tsx';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 const ROLE_OPTIONS = [
   { value: 'admin', label: 'Администратор', description: 'Полный доступ к управлению системой.' },

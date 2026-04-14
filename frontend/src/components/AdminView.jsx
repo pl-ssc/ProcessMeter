@@ -31,7 +31,9 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarProvider,
+  SidebarInset,
   SidebarSeparator,
+  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -102,6 +104,7 @@ export default function AdminView({ user, onLogout, isDark, onToggleTheme, onOpe
           isDark={isDark}
           onToggleTheme={onToggleTheme}
           onSwitchRole={onSwitchRole}
+          leftAction={<SidebarTrigger className="md:hidden" />}
         />
 
         <div className="flex min-h-0 flex-1">
@@ -253,40 +256,40 @@ export default function AdminView({ user, onLogout, isDark, onToggleTheme, onOpe
             </SidebarContent>
           </Sidebar>
 
-          <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
+          <SidebarInset className="min-h-0 min-w-0 overflow-hidden">
             <div className="h-full overflow-auto p-4 md:p-6">
-            <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-              <div className="space-y-2">
-                <div className="flex flex-wrap items-center gap-3">
-                  <h1 className="text-3xl font-semibold tracking-tight">
-                    {activePageTitle}
-                  </h1>
-                  {activeTab === 'users' ? (
-                    <Badge variant="secondary" className="px-3 py-1 text-[11px] uppercase tracking-wide">
-                      {activeRoleLabel}
-                    </Badge>
-                  ) : activeTab === 'dictionaries' ? (
-                    <Badge variant="secondary" className="px-3 py-1 text-[11px] uppercase tracking-wide">
-                      {activeDictionaryLabel}
-                    </Badge>
-                  ) : null}
+              <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h1 className="text-3xl font-semibold tracking-tight">
+                      {activePageTitle}
+                    </h1>
+                    {activeTab === 'users' ? (
+                      <Badge variant="secondary" className="px-3 py-1 text-[11px] uppercase tracking-wide">
+                        {activeRoleLabel}
+                      </Badge>
+                    ) : activeTab === 'dictionaries' ? (
+                      <Badge variant="secondary" className="px-3 py-1 text-[11px] uppercase tracking-wide">
+                        {activeDictionaryLabel}
+                      </Badge>
+                    ) : null}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {activePageDescription}
+                  </p>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {activePageDescription}
-                </p>
               </div>
-            </div>
 
-            <Suspense fallback={<div className="space-y-4"><Skeleton className="h-16 rounded-xl" /><Skeleton className="h-80 rounded-xl" /></div>}>
-              {activeTab === 'users' ? <UserManagement role={selectedUserRole} /> : null}
-              {activeTab === 'dictionaries' ? <Dictionaries key={selectedDictionarySection} type={selectedDictionarySection} /> : null}
-              {activeTab === 'dashboards' ? <AnalyticsLinkCard onOpenAnalytics={onOpenAnalytics} /> : null}
-              {activeTab === 'import' ? <DataImport /> : null}
-              {activeTab === 'settings' ? <SmtpSettings /> : null}
-              {activeTab === 'nocodb' ? <NocodbUsers /> : null}
-            </Suspense>
-          </div>
-        </div>
+              <Suspense fallback={<div className="space-y-4"><Skeleton className="h-16 rounded-xl" /><Skeleton className="h-80 rounded-xl" /></div>}>
+                {activeTab === 'users' ? <UserManagement role={selectedUserRole} /> : null}
+                {activeTab === 'dictionaries' ? <Dictionaries key={selectedDictionarySection} type={selectedDictionarySection} /> : null}
+                {activeTab === 'dashboards' ? <AnalyticsLinkCard onOpenAnalytics={onOpenAnalytics} /> : null}
+                {activeTab === 'import' ? <DataImport /> : null}
+                {activeTab === 'settings' ? <SmtpSettings /> : null}
+                {activeTab === 'nocodb' ? <NocodbUsers /> : null}
+              </Suspense>
+            </div>
+          </SidebarInset>
         </div>
       </SidebarProvider>
     </TooltipProvider>
