@@ -8,12 +8,12 @@ import { Input } from '../ui/input.jsx';
 import { Label } from '../ui/label.jsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select.jsx';
 
-export default function UserForm({ user, onClose, onSuccess }) {
+export default function UserForm({ user, defaultRole = 'respondent', onClose, onSuccess }) {
   const isEdit = !!user;
   const [formData, setFormData] = useState({
     username: user?.username || '',
     full_name: user?.full_name || '',
-    role: user?.role || 'respondent',
+    role: user?.role || defaultRole || 'respondent',
     department_id: user?.department_id ? String(user.department_id) : '',
     profession_id: user?.profession_id ? String(user.profession_id) : '',
     process_1_access: [],

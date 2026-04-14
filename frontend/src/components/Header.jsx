@@ -13,7 +13,7 @@ const ROLE_LABELS = {
   respondent: 'Респондент',
 };
 
-export default function Header({ user, onLogout, autoSaveStatus, isDark, onToggleTheme }) {
+export default function Header({ user, onLogout, autoSaveStatus, isDark, onToggleTheme, leftAction = null }) {
   const initials = (user.full_name || user.username || '?')
     .split(' ')
     .map((part) => part.charAt(0))
@@ -25,6 +25,7 @@ export default function Header({ user, onLogout, autoSaveStatus, isDark, onToggl
     <header className="sticky top-0 z-40 border-b bg-card/90 backdrop-blur-md">
       <div className="flex h-20 items-center justify-between gap-4 px-6">
         <div className="flex min-w-0 items-center gap-4">
+          {leftAction ? <div className="shrink-0">{leftAction}</div> : null}
           <div className="flex h-12 w-44 items-center overflow-hidden rounded-2xl border border-slate-200/80 bg-white/80 px-2 dark:border-slate-800 dark:bg-slate-950/40">
             <img
               src={isDark ? '/logo-dark-true-transparent.png' : '/logo-light-true-transparent.png'}

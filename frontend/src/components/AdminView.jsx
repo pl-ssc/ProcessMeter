@@ -1,111 +1,224 @@
-import React, { Suspense, lazy, useMemo, useState } from 'react';
-import { ArrowUpRight, BookOpen, ChevronLeft, Database, LayoutDashboard, LogOut, Menu, Settings, Users } from 'lucide-react';
+import React, { Suspense, lazy, useState } from 'react';
+import {
+  ArrowUpRight,
+  BookOpen,
+  Database,
+  LayoutDashboard,
+  Settings,
+  Users,
+} from 'lucide-react';
 import Header from './Header.jsx';
-import { Button } from './ui/button.jsx';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card.jsx';
-import { ScrollArea } from './ui/scroll-area.jsx';
-import { Separator } from './ui/separator.jsx';
-import { Skeleton } from './ui/skeleton.jsx';
+import { Badge } from './ui/badge.jsx';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from './ui/card.jsx';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+  SidebarProvider,
+  SidebarRail,
+  SidebarSeparator,
+  SidebarTrigger,
+} from '@/components/ui/sidebar';
+import { Skeleton } from '@/components/ui/skeleton';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import UserManagement from './admin/UserManagement.jsx';
 
 const DataImport = lazy(() => import('./admin/DataImport.jsx'));
 const Dictionaries = lazy(() => import('./admin/Dictionaries.jsx'));
 const NocodbUsers = lazy(() => import('./admin/NocodbUsers.jsx'));
 const SmtpSettings = lazy(() => import('./admin/SmtpSettings.jsx'));
-const UserManagement = lazy(() => import('./admin/UserManagement.jsx'));
+
+const USER_ROLE_ITEMS = [
+  { id: 'respondent', label: 'Респонденты', shortLabel: 'Респонденты' },
+  { id: 'auditor', label: 'Аналитики', shortLabel: 'Аналитики' },
+  { id: 'admin', label: 'Администраторы', shortLabel: 'Администраторы' },
+];
+
+const MAIN_NAV_ITEMS = [
+  { id: 'dictionaries', label: 'Справочники', icon: BookOpen },
+  { id: 'dashboards', label: 'Аналитика', icon: LayoutDashboard },
+  { id: 'settings', label: 'Настройки', icon: Settings },
+  { id: 'import', label: 'Импорт данных', icon: Database },
+  { id: 'nocodb', label: 'Эталонная база', icon: Database },
+];
+
+const PAGE_TITLES = {
+  users: 'Пользователи',
+  dictionaries: 'Справочники',
+  dashboards: 'Аналитика и дашборды',
+  settings: 'Настройки приложения',
+  import: 'Импорт и синхронизация',
+  nocodb: 'Эталонная база (NocoDB)',
+};
+
+const PAGE_DESCRIPTIONS = {
+  users: 'Навигация по ролям и управление учетными записями.',
+  dictionaries: 'Справочники подразделений и профессий.',
+  dashboards: 'Отдельный раздел аналитики для роли аналитика.',
+  settings: 'Параметры SMTP и системные настройки.',
+  import: 'Загрузка и синхронизация данных.',
+  nocodb: 'Подключение и управление эталонной базой.',
+};
 
 export default function AdminView({ user, onLogout, isDark, onToggleTheme, onOpenAnalytics }) {
   const [activeTab, setActiveTab] = useState('users');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [selectedUserRole, setSelectedUserRole] = useState('respondent');
 
-  const menuItems = useMemo(
-    () => [
-      { id: 'users', label: 'Пользователи', icon: Users },
-      { id: 'dictionaries', label: 'Справочники', icon: BookOpen },
-      { id: 'dashboards', label: 'Аналитика', icon: LayoutDashboard },
-      { id: 'settings', label: 'Настройки', icon: Settings },
-      { type: 'divider' },
-      { id: 'import', label: 'Импорт данных', icon: Database },
-      { id: 'nocodb', label: 'Эталонная база', icon: Database },
-    ],
-    []
-  );
-
-  const titles = {
-    users: 'Управление пользователями',
-    dictionaries: 'Справочники',
-    dashboards: 'Аналитика и дашборды',
-    settings: 'Настройки приложения',
-    import: 'Импорт и синхронизация',
-    nocodb: 'Эталонная база (NocoDB)',
-  };
+  const activeRoleLabel = USER_ROLE_ITEMS.find((item) => item.id === selectedUserRole)?.label || 'Респонденты';
 
   return (
-    <div className="flex h-full flex-col">
-      <Header user={user} onLogout={onLogout} isDark={isDark} onToggleTheme={onToggleTheme} />
-      <div className="grid min-h-0 flex-1 grid-cols-[auto_1fr]">
-        <aside className={`border-r bg-card/80 transition-all ${isSidebarOpen ? 'w-72' : 'w-20'}`}>
-          <div className="flex h-full flex-col">
-            <div className="flex items-center justify-between px-4 py-4">
-              {isSidebarOpen ? (
-                <div>
-                  <div className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">Console</div>
-                  <div className="text-lg font-bold">Управление</div>
-                </div>
-              ) : (
-                <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">UI</div>
-              )}
-              <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen((value) => !value)}>
-                {isSidebarOpen ? <ChevronLeft className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-              </Button>
+    <TooltipProvider delayDuration={120}>
+      <SidebarProvider defaultOpen>
+        <Sidebar variant="inset" collapsible="icon">
+          <SidebarHeader>
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-sidebar-border/70 bg-sidebar-accent/25 px-3 py-2">
+              <div className="min-w-0">
+                <div className="text-[11px] uppercase tracking-[0.22em] text-sidebar-foreground/60">Console</div>
+                <div className="truncate text-sm font-semibold text-sidebar-foreground">Управление</div>
+              </div>
             </div>
-            <Separator />
-            <ScrollArea className="flex-1 px-3 py-4">
-              <nav className="space-y-2">
-                {menuItems.map((item, index) => {
-                  if (item.type === 'divider') {
-                    return <Separator key={`divider-${index}`} className="my-4" />;
-                  }
-
-                  const isActive = activeTab === item.id;
-                  return (
-                    <Button
-                      key={item.id}
-                      variant={isActive ? 'secondary' : 'ghost'}
-                      className={`w-full justify-start gap-3 rounded-xl px-3 ${isSidebarOpen ? '' : 'px-0 justify-center'}`}
-                      onClick={() => setActiveTab(item.id)}
+          </SidebarHeader>
+          <SidebarSeparator />
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupLabel>Пользователи</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={activeTab === 'users'}
+                      tooltip="Пользователи"
                     >
-                      <item.icon className="h-4 w-4 shrink-0" />
-                      {isSidebarOpen ? <span>{item.label}</span> : null}
-                    </Button>
-                  );
-                })}
-              </nav>
-            </ScrollArea>
-            <div className="p-3">
-              <Button variant="outline" className={`w-full gap-3 rounded-xl ${isSidebarOpen ? 'justify-start' : 'justify-center px-0'}`} onClick={onLogout}>
-                <LogOut className="h-4 w-4" />
-                {isSidebarOpen ? <span>Выйти</span> : null}
-              </Button>
-            </div>
-          </div>
-        </aside>
-        <main className="min-h-0 overflow-auto p-6">
-          <div className="mb-6 space-y-1">
-            <div className="text-sm uppercase tracking-[0.2em] text-muted-foreground">Админ-панель</div>
-            <h1 className="text-3xl font-extrabold tracking-tight">{titles[activeTab]}</h1>
-          </div>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('users')}
+                        className="flex w-full items-center gap-2"
+                      >
+                        <Users />
+                        <span>Все пользователи</span>
+                      </button>
+                    </SidebarMenuButton>
+                    <SidebarMenuSub>
+                      {USER_ROLE_ITEMS.map((item) => (
+                        <SidebarMenuSubItem key={item.id}>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={activeTab === 'users' && selectedUserRole === item.id}
+                            className="pl-2"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveTab('users');
+                                setSelectedUserRole(item.id);
+                              }}
+                              className="flex w-full items-center gap-2"
+                            >
+                              <span>{item.shortLabel}</span>
+                            </button>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
 
-          <Suspense fallback={<div className="space-y-4"><Skeleton className="h-16 rounded-3xl" /><Skeleton className="h-80 rounded-3xl" /></div>}>
-            {activeTab === 'users' ? <UserManagement /> : null}
-            {activeTab === 'dictionaries' ? <Dictionaries /> : null}
-            {activeTab === 'dashboards' ? <AnalyticsLinkCard onOpenAnalytics={onOpenAnalytics} /> : null}
-            {activeTab === 'import' ? <DataImport /> : null}
-            {activeTab === 'settings' ? <SmtpSettings /> : null}
-            {activeTab === 'nocodb' ? <NocodbUsers /> : null}
-          </Suspense>
-        </main>
-      </div>
-    </div>
+            <SidebarSeparator />
+
+            <SidebarGroup>
+              <SidebarGroupLabel>Разделы</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {MAIN_NAV_ITEMS.map((item) => {
+                    const isActive = activeTab === item.id;
+
+                    return (
+                      <SidebarMenuItem key={item.id}>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={isActive}
+                          tooltip={item.label}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setActiveTab(item.id)}
+                            className="flex w-full items-center gap-2"
+                          >
+                            <item.icon />
+                            <span>{item.label}</span>
+                          </button>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+          <SidebarRail />
+        </Sidebar>
+
+        <SidebarInset className="flex min-h-svh flex-col overflow-hidden">
+          <Header
+            user={user}
+            onLogout={onLogout}
+            isDark={isDark}
+            onToggleTheme={onToggleTheme}
+            leftAction={<SidebarTrigger />}
+          />
+
+          <div className="flex-1 overflow-auto p-6">
+            <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+              <div className="space-y-2">
+                <div className="text-sm uppercase tracking-[0.2em] text-muted-foreground">Админ-панель</div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <h1 className="text-3xl font-extrabold tracking-tight">
+                    {PAGE_TITLES[activeTab] || 'Админ-панель'}
+                  </h1>
+                  {activeTab === 'users' ? (
+                    <Badge variant="secondary" className="rounded-full px-3 py-1 text-[11px] uppercase tracking-wide">
+                      {activeRoleLabel}
+                    </Badge>
+                  ) : null}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {PAGE_DESCRIPTIONS[activeTab] || 'Управление приложением.'}
+                </p>
+              </div>
+            </div>
+
+            <Suspense fallback={<div className="space-y-4"><Skeleton className="h-16 rounded-3xl" /><Skeleton className="h-80 rounded-3xl" /></div>}>
+              {activeTab === 'users' ? <UserManagement role={selectedUserRole} /> : null}
+              {activeTab === 'dictionaries' ? <Dictionaries /> : null}
+              {activeTab === 'dashboards' ? <AnalyticsLinkCard onOpenAnalytics={onOpenAnalytics} /> : null}
+              {activeTab === 'import' ? <DataImport /> : null}
+              {activeTab === 'settings' ? <SmtpSettings /> : null}
+              {activeTab === 'nocodb' ? <NocodbUsers /> : null}
+            </Suspense>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    </TooltipProvider>
   );
 }
 
@@ -123,8 +236,8 @@ function AnalyticsLinkCard({ onOpenAnalytics }) {
           На странице аналитики собраны сводка проекта, трудозатраты и FTE, узкие места процессов, использование ИТ-систем и орг-аналитика по подразделениям и профессиям.
         </div>
         <Button className="shrink-0" onClick={onOpenAnalytics}>
-          <ArrowUpRight className="h-4 w-4" />
-          Открыть аналитику
+          <ArrowUpRight />
+          <span>Открыть аналитику</span>
         </Button>
       </CardContent>
     </Card>

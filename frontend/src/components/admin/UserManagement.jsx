@@ -10,19 +10,33 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card.jsx';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu.jsx';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog.jsx';
 import { Input } from '../ui/input.jsx';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select.jsx';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table.jsx';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip.jsx';
 import { Textarea } from '../ui/textarea.jsx';
 import UserForm from './UserForm.jsx';
 
 const TOAST_DURATION_MS = 4000;
+const ROLE_LABELS = {
+  admin: 'Администраторы',
+  auditor: 'Аналитики',
+  respondent: 'Респонденты',
+};
+const ROLE_BADGE_LABELS = {
+  admin: 'Администратор',
+  auditor: 'Аналитик',
+  respondent: 'Респондент',
+};
+const ROLE_ORDER = {
+  admin: 0,
+  auditor: 1,
+  respondent: 2,
+};
 
-export default function UserManagement() {
+export default function UserManagement({ role = 'respondent' }) {
+  const selectedRole = role === 'admin' || role === 'auditor' || role === 'respondent' ? role : 'respondent';
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState('all');
   const [showForm, setShowForm] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [actionLoading, setActionLoading] = useState({});
@@ -35,16 +49,21 @@ export default function UserManagement() {
 
   useEffect(() => {
     loadUsers();
-  }, [searchTerm, roleFilter]);
+  }, [searchTerm, selectedRole]);
 
   const loadUsers = async () => {
     setLoading(true);
     try {
-      let url = '/api/admin/users?include_admins=true';
+      let url = `/api/admin/users?include_admins=true&role=${selectedRole}`;
       if (searchTerm) url += `&search=${encodeURIComponent(searchTerm)}`;
-      if (roleFilter !== 'all') url += `&role=${roleFilter}`;
       const response = await apiFetch(url);
-      setUsers(response.users || []);
+      const orderedUsers = (response.users || []).slice().sort((left, right) => {
+        const leftOrder = ROLE_ORDER[left.role] ?? 99;
+        const rightOrder = ROLE_ORDER[right.role] ?? 99;
+        if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+        return String(left.full_name || left.username || '').localeCompare(String(right.full_name || right.username || ''), 'ru');
+      });
+      setUsers(orderedUsers);
     } catch (error) {
       console.error('Failed to load users:', error);
     } finally {
@@ -206,7 +225,7 @@ export default function UserManagement() {
     }
   };
 
-  const roleLabel = (role) => (role === 'admin' ? 'Админ' : role === 'auditor' ? 'Аналитик' : 'Респондент');
+  const roleLabel = (roleValue) => ROLE_BADGE_LABELS[roleValue] || 'Респондент';
   const roleVariant = (role) => (role === 'admin' ? 'destructive' : role === 'auditor' ? 'warning' : 'default');
   const getDeleteDisabledReason = (user) => {
     if (user.can_delete === false && user.role === 'admin') {
@@ -242,23 +261,15 @@ export default function UserManagement() {
 
       <Card>
         <CardHeader className="gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <CardTitle>Пользователи</CardTitle>
+          <div>
+            <CardTitle>{ROLE_LABELS[selectedRole]}</CardTitle>
+            <div className="text-sm text-muted-foreground">Список пользователей в выбранной роли.</div>
+          </div>
           <div className="flex flex-col gap-3 lg:flex-row">
             <div className="relative min-w-[280px]">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input placeholder="Поиск по имени или email..." value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} className="pl-9" />
             </div>
-            <Select value={roleFilter} onValueChange={setRoleFilter}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Все роли</SelectItem>
-                <SelectItem value="admin">Администраторы</SelectItem>
-                <SelectItem value="auditor">Аналитики</SelectItem>
-                <SelectItem value="respondent">Респонденты</SelectItem>
-              </SelectContent>
-            </Select>
             <input ref={fileInputRef} type="file" accept=".xlsx, .xls" className="hidden" onChange={handleFileUpload} />
             <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isImporting}>
               {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
@@ -281,7 +292,7 @@ export default function UserManagement() {
                     <TableHead>
                       <HeaderHint
                         label="Пользователь"
-                        hint="Цветная точка рядом с именем респондента: зеленая — опрос в процессе, оранжевая — опрос завершен."
+                        hint="ФИО и email пользователя в выбранной роли."
                       />
                     </TableHead>
                     <TableHead>
@@ -297,7 +308,12 @@ export default function UserManagement() {
                       <HeaderHint label="Доступы" hint="Количество процессов 1 уровня, к которым у пользователя есть доступ." />
                     </TableHead>
                     <TableHead>
-                      <HeaderHint label="Статус" hint="Статус учетной записи: активен — может входить, заблокирован — вход запрещен." />
+                      <HeaderHint
+                        label="Статус"
+                        hint={selectedRole === 'respondent'
+                          ? 'Активность учетной записи и статус анкеты респондента.'
+                          : 'Статус учетной записи: активен — может входить, заблокирован — вход запрещен.'}
+                      />
                     </TableHead>
                     <TableHead className="text-right">Действия</TableHead>
                   </TableRow>
@@ -313,9 +329,6 @@ export default function UserManagement() {
                           <div>
                             <div className="flex items-center gap-2 font-semibold">
                               {user.full_name || 'Без имени'}
-                              {user.role === 'respondent' ? (
-                                <span className={`h-2.5 w-2.5 rounded-full ${user.is_survey_completed ? 'bg-orange-500' : 'bg-emerald-500'}`} />
-                              ) : null}
                             </div>
                             <div className="text-xs text-muted-foreground">{user.username}</div>
                           </div>
@@ -330,7 +343,7 @@ export default function UserManagement() {
                       <TableCell>
                         <div className="flex flex-wrap items-center gap-2">
                           <Badge variant={user.is_active ? 'success' : 'secondary'}>{user.is_active ? 'Активен' : 'Заблокирован'}</Badge>
-                          {user.role === 'respondent' ? (
+                          {selectedRole === 'respondent' ? (
                             <Badge
                               variant={user.is_survey_completed ? 'success' : 'secondary'}
                               className="h-5 rounded-full px-2 py-0 text-[10px] font-medium uppercase tracking-wide"
@@ -408,6 +421,7 @@ export default function UserManagement() {
       {showForm ? (
         <UserForm
           user={editingUser}
+          defaultRole={selectedRole}
           onClose={() => setShowForm(false)}
           onSuccess={handleFormSuccess}
         />
