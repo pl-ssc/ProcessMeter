@@ -318,14 +318,6 @@ export default function UserManagement() {
                               ) : null}
                             </div>
                             <div className="text-xs text-muted-foreground">{user.username}</div>
-                            {user.role === 'respondent' ? (
-                              <Badge
-                                variant={user.is_survey_completed ? 'success' : 'secondary'}
-                                className="mt-1 h-5 rounded-full px-2 py-0 text-[10px] font-medium uppercase tracking-wide"
-                              >
-                                {user.is_survey_completed ? 'Анкета завершена' : 'Анкета в работе'}
-                              </Badge>
-                            ) : null}
                           </div>
                         </div>
                       </TableCell>
@@ -336,7 +328,17 @@ export default function UserManagement() {
                       <TableCell>{user.profession_name || '—'}</TableCell>
                       <TableCell>{user.access_count} процессов</TableCell>
                       <TableCell>
-                        <Badge variant={user.is_active ? 'success' : 'secondary'}>{user.is_active ? 'Активен' : 'Заблокирован'}</Badge>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant={user.is_active ? 'success' : 'secondary'}>{user.is_active ? 'Активен' : 'Заблокирован'}</Badge>
+                          {user.role === 'respondent' ? (
+                            <Badge
+                              variant={user.is_survey_completed ? 'success' : 'secondary'}
+                              className="h-5 rounded-full px-2 py-0 text-[10px] font-medium uppercase tracking-wide"
+                            >
+                              {user.is_survey_completed ? 'Анкета завершена' : 'Анкета в работе'}
+                            </Badge>
+                          ) : null}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex justify-end">
